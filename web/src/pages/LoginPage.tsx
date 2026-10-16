@@ -30,7 +30,7 @@ export function LoginPage() {
     <div className="cb-login">
       <form className="cb-card cb-login-card" onSubmit={submit}>
         <div className="cb-brand cb-brand-lg">
-          <img src="/favicon.svg" alt="" width={36} height={36} />
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={36} height={36} />
           Chalkback
         </div>
         <p className="cb-muted">Your whiteboard remembers, so your students do too.</p>

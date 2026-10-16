@@ -1,0 +1,70 @@
+name: chalkback
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: chalkback
+      POSTGRES_DB: chalkback
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chalkback"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ../api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+psycopg://chalkback:${POSTGRES_PASSWORD}@db:5432/chalkback
+      DATA_DIR: /data
+      PUBLIC_BASE_URL: https://${DOMAIN}
+      APP_BASE_URL: https://${DOMAIN}/app
+      CORS_ORIGINS: '["https://${DOMAIN}"]'
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in deploy/.env}
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-5-5}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      SEED_DEMO: ${SEED_DEMO:-true}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-demo-password}
+    volumes:
+      - uploads:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      retries: 6
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+      args:
+        VITE_TLDRAW_LICENSE_KEY: ${VITE_TLDRAW_LICENSE_KEY:-}
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

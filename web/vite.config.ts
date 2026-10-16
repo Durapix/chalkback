@@ -4,6 +4,8 @@ import { defineConfig } from 'vite'
 const api = process.env.VITE_API_PROXY ?? 'http://localhost:8000'
 
 export default defineConfig({
+  // Served under /app/ in production (see deploy/Caddyfile).
+  base: process.env.VITE_BASE ?? '/',
   plugins: [react()],
   server: {
     port: 5173,
