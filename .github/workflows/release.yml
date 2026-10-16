@@ -16,9 +16,10 @@ jobs:
       - name: Extract changelog section
         run: |
           version="${GITHUB_REF_NAME#v}"
-          awk -v v="$version" '
-            $0 ~ "^## \\[" v "\\]" { on = 1; next }
-            on && /^## \[/ { exit }
+          awk -v head="## [$version]" '
+            index($0, head) == 1 { on = 1; next }
+            on && /^## / { exit }
+            /^\[[^]]*\]: / { next }
             on { print }
           ' CHANGELOG.md > notes.md
           test -s notes.md || echo "Release $GITHUB_REF_NAME" > notes.md
