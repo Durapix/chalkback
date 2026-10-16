@@ -1,0 +1,56 @@
+site_name: Chalkback
+site_description: Whiteboard photos in, editable boards and lesson recaps out.
+site_url: https://example.com/docs/
+repo_url: ""
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Overview: index.md
+  - Getting started: getting-started.md
+  - Architecture: architecture.md
+  - AI pipeline: ai-pipeline.md
+  - Reminders: reminders.md
+  - API: api.md
+  - Privacy: privacy.md
+  - Roadmap: roadmap.md
