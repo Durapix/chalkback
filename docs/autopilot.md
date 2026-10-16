@@ -27,7 +27,8 @@ work. The landing page's timeline is generated from this history by
 
 ## Phase 1: local
 
-The repository runs locally with real branches, merge commits and tags. There is no remote yet.
+Up to v0.1.0 the project lived only on the owner's machine, with real branches, merge commits
+and tags but no remote.
 
 ## Phase 2: GitHub (now)
 
