@@ -25,9 +25,9 @@ services:
       ENVIRONMENT: production
       DATABASE_URL: postgresql+psycopg://chalkback:${POSTGRES_PASSWORD}@db:5432/chalkback
       DATA_DIR: /data
-      PUBLIC_BASE_URL: https://${DOMAIN}
-      APP_BASE_URL: https://${DOMAIN}/app
-      CORS_ORIGINS: '["https://${DOMAIN}"]'
+      PUBLIC_BASE_URL: ${PUBLIC_URL:-https://${DOMAIN}}
+      APP_BASE_URL: ${PUBLIC_URL:-https://${DOMAIN}}/app
+      CORS_ORIGINS: '["${PUBLIC_URL:-https://${DOMAIN}}"]'
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in deploy/.env}
       ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -54,11 +54,12 @@ services:
     depends_on:
       - api
     environment:
-      DOMAIN: ${DOMAIN:?set DOMAIN in deploy/.env}
+      # Caddy site address: the bare domain in production (automatic HTTPS), ":80" locally.
+      SITE_ADDRESS: ${SITE_ADDRESS:-${DOMAIN:?set DOMAIN in deploy/.env}}
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
