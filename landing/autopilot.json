@@ -1,0 +1,22 @@
+{
+  "commits": 11,
+  "merges": [
+    {
+      "sha": "b084e69",
+      "date": "2026-10-16T09:45:29+02:00",
+      "branch": "feat/web-app",
+      "summary": "React + tldraw frontend: login, teacher and student dashboards, lesson page with AI-reconstructed editable boards (KaTeX math shape), recap panel, uploads, reminders UI. Verified in the browser against the mock-mode API. Self-reviewed; tsc and vite build clean.",
+      "commits": 4,
+      "review_fixes": 1
+    },
+    {
+      "sha": "031afba",
+      "date": "2026-10-16T09:37:37+02:00",
+      "branch": "feat/api-foundation",
+      "summary": "FastAPI backend: auth, students, lessons, board uploads, Claude reconstruction and summaries (mock mode without a key), Telegram/Resend reminders. Self-reviewed; 12 tests passing, ruff clean.",
+      "commits": 4,
+      "review_fixes": 1
+    }
+  ],
+  "releases": []
+}
