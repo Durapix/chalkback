@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chalkback — your whiteboard remembers</title>
+    <meta
+      name="description"
+      content="Chalkback turns photos of tutoring whiteboards into editable digital boards and reminds every student what was covered. Built end to end by an AI agent on autopilot."
+    />
+    <meta property="og:title" content="Chalkback — your whiteboard remembers" />
+    <meta property="og:description" content="Whiteboard photos in, editable boards and lesson recaps out." />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="nav">
+      <a class="brand" href="#top"><img src="favicon.svg" alt="" width="28" height="28" />Chalkback</a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#recap">Recaps</a>
+        <a href="#autopilot">Autopilot</a>
+        <a href="/docs/">Docs</a>
+      </nav>
+      <a class="btn btn-small" href="/app/">Open the app</a>
+    </header>
+
+    <main id="top">
+      <!-- HERO -->
+      <section class="hero">
+        <div class="hero-copy reveal">
+          <p class="eyebrow"><span class="dot"></span> AI-built · AI-powered · open source</p>
+          <h1>
+            Your whiteboard <span class="scribble">remembers</span>.<br />
+            So your students do too.
+          </h1>
+          <p class="lede">
+            Snap the board at the end of a lesson. Chalkback rebuilds it as a live, editable
+            whiteboard, writes the recap, and nudges each student before the next lesson.
+          </p>
+          <div class="cta">
+            <a class="btn" href="/app/">Try the live demo <span aria-hidden="true">→</span></a>
+            <a class="btn btn-ghost" href="#autopilot">See how an AI built it</a>
+          </div>
+          <p class="fine">Demo login is on the sign-in page. All students in the demo are fictional.</p>
+        </div>
+
+        <div class="board-stage reveal" aria-label="A photographed whiteboard being reconstructed into a digital board">
+          <div class="board">
+            <!-- photo layer: chalk handwriting -->
+            <div class="layer photo">
+              <svg viewBox="0 0 600 380" class="chalk">
+                <defs>
+                  <filter id="chalky">
+                    <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" result="n" />
+                    <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2" />
+                  </filter>
+                </defs>
+                <g filter="url(#chalky)" fill="none" stroke="#f3efe2" stroke-linecap="round" stroke-width="3">
+                  <text x="34" y="62" class="hand hand-xl">Quadratic equations</text>
+                  <path class="draw" d="M34 74 C 140 80, 260 70, 336 76" />
+                  <text x="46" y="128" class="hand">ax² + bx + c = 0</text>
+                  <text x="46" y="184" class="hand">D = b² − 4ac</text>
+                  <rect class="draw" x="36" y="214" width="250" height="96" rx="8" />
+                  <text x="52" y="270" class="hand">x₁,₂ = (−b ± √D) / 2a</text>
+                  <path class="draw" d="M250 176 L 340 176 M 326 166 L 342 176 L 326 186" />
+                  <text x="352" y="184" class="hand hand-sm">D &gt; 0 → two roots</text>
+                  <path class="draw" d="M392 200 C 420 300, 450 322, 470 322 S 520 300, 548 200" />
+                  <path class="draw" d="M376 300 L 566 300 M 470 350 L 470 196" stroke-width="2" opacity=".7" />
+                </g>
+              </svg>
+            </div>
+            <!-- digital layer: crisp, editable -->
+            <div class="layer digital">
+              <div class="el t-xl" style="left:5.7%;top:9%">Quadratic equations<i></i></div>
+              <div class="el t-math blue" style="left:7.7%;top:26%">
+                <em>a</em><em>x</em><sup>2</sup> + <em>b</em><em>x</em> + <em>c</em> = 0<i></i>
+              </div>
+              <div class="el t-math" style="left:7.7%;top:41%">
+                <em>D</em> = <em>b</em><sup>2</sup> − 4<em>a</em><em>c</em><i></i>
+              </div>
+              <div class="el box" style="left:6%;top:56.3%;width:41.6%;height:25.2%"><i></i></div>
+              <div class="el t-math" style="left:8.6%;top:63%">
+                <em>x</em><sub>1,2</sub> =
+                <span class="frac"><span>−<em>b</em> ± √<em>D</em></span><span>2<em>a</em></span></span><i></i>
+              </div>
+              <div class="el arrow" style="left:41.6%;top:45.6%;width:15%"><i></i></div>
+              <div class="el t-sm green" style="left:58.6%;top:42%">D &gt; 0 → two real roots<i></i></div>
+              <svg class="el curve" viewBox="0 0 600 380" preserveAspectRatio="none">
+                <path d="M392 200 C 420 300, 450 322, 470 322 S 520 300, 548 200" />
+              </svg>
+              <div class="cursor" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24"><path d="M3 2l7 19 2.5-7.5L20 11z" fill="#fff" stroke="#111" stroke-width="1.4" /></svg>
+                <span>Claude</span>
+              </div>
+            </div>
+            <div class="scanline" aria-hidden="true"></div>
+          </div>
+          <div class="board-caption">
+            <span class="tag tag-photo">photo.jpg</span>
+            <span class="arrow-mini">→</span>
+            <span class="tag tag-live">live tldraw board · 9 shapes · 3 formulas</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- HOW -->
+      <section id="how" class="section">
+        <h2 class="reveal">From chalk dust to <span class="grad">structured knowledge</span></h2>
+        <div class="steps">
+          <article class="card reveal">
+            <div class="step-n">01</div>
+            <h3>Snap</h3>
+            <p>Upload screenshots or a PDF export of the board. Every page becomes its own board, in seconds.</p>
+            <code>POST /lessons/42/boards</code>
+          </article>
+          <article class="card reveal">
+            <div class="step-n">02</div>
+            <h3>Reconstruct</h3>
+            <p>
+              Claude reads handwriting, formulas, arrows and graphs, then returns a strict, validated scene. Each
+              element becomes a real tldraw shape, laid over the original photo.
+            </p>
+            <code>text · math(LaTeX) · geo · arrow · draw</code>
+          </article>
+          <article class="card reveal">
+            <div class="step-n">03</div>
+            <h3>Remember</h3>
+            <p>
+              A warm, accurate recap for each student, in their language. It is delivered on Telegram or by email
+              the day before the next lesson.
+            </p>
+            <code>reminder_lead_hours = 24</code>
+          </article>
+        </div>
+      </section>
+
+      <!-- RECAP -->
+      <section id="recap" class="section split">
+        <div class="reveal">
+          <h2>The recap lands <span class="grad">right before it matters</span></h2>
+          <p class="lede">
+            Students forget most of a lesson within days. Chalkback sends the key points, formulas and a small
+            practice task, so the next lesson starts where the last one ended.
+          </p>
+          <ul class="ticks">
+            <li>Written from the board itself, never invented</li>
+            <li>Formulas stay as LaTeX, rendered beautifully</li>
+            <li>Per-student language and channel</li>
+            <li>Idempotent scheduler: one reminder per upcoming lesson</li>
+          </ul>
+        </div>
+        <div class="phone reveal" aria-label="Example Telegram reminder">
+          <div class="phone-top"><b>Chalkback</b><small>bot</small></div>
+          <div class="bubble">
+            <p>Hi Mia! 👋 Last time we worked on <b>quadratic equations</b>. Remember: compute the discriminant first, then use the formula for the roots.</p>
+            <p class="mono">D = b² − 4ac</p>
+            <p><b>Before tomorrow:</b> solve two equations with D &gt; 0 and one with D &lt; 0.</p>
+            <a>Open the board ↗</a>
+            <time>18:00</time>
+          </div>
+          <div class="typing"><span></span><span></span><span></span></div>
+        </div>
+      </section>
+
+      <!-- AUTOPILOT -->
+      <section id="autopilot" class="section">
+        <h2 class="reveal">Built by an AI on <span class="grad">autopilot</span></h2>
+        <p class="lede center reveal">
+          Every line of this project was written, reviewed, fixed, merged, released, documented and deployed by an
+          AI coding agent. The human only set the goal. The log below is generated from the real git history.
+        </p>
+        <div class="stats reveal">
+          <div><b data-stat="commits">—</b><span>commits</span></div>
+          <div><b data-stat="merges">—</b><span>branches merged</span></div>
+          <div><b data-stat="fixes">—</b><span>self-review fixes</span></div>
+          <div><b data-stat="releases">—</b><span>releases</span></div>
+        </div>
+        <ol class="timeline" id="timeline">
+          <li class="muted">Loading the autopilot log…</li>
+        </ol>
+      </section>
+
+      <!-- STACK -->
+      <section class="section">
+        <h2 class="reveal">The stack</h2>
+        <div class="stack reveal">
+          <span>Python · FastAPI</span><span>SQLAlchemy</span><span>Claude (vision + structured outputs)</span>
+          <span>React · Vite · TypeScript</span><span>tldraw</span><span>KaTeX</span><span>Telegram Bot API</span>
+          <span>Resend</span><span>Docker · Caddy</span><span>Hetzner</span><span>GitHub Actions</span>
+        </div>
+      </section>
+
+      <section class="section final reveal">
+        <h2>Stop re-teaching last week.</h2>
+        <a class="btn" href="/app/">Try the live demo →</a>
+      </section>
+    </main>
+
+    <footer>
+      <span>Chalkback · built by an AI agent, supervised by a human</span>
+      <a href="/docs/">Documentation</a>
+    </footer>
+
+    <script src="main.js" type="module"></script>
+  </body>
+</html>
