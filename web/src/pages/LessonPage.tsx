@@ -143,7 +143,8 @@ function BoardPane({
   if (!board) return <div className="cb-empty cb-muted">Loading board…</div>
   return (
     <Suspense fallback={<div className="cb-empty cb-muted">Loading editor…</div>}>
-      <BoardEditor board={board} />
+      {/* A re-run reconstruction changes updated_at and must rebuild the canvas. */}
+      <BoardEditor key={board.updated_at} board={board} />
     </Suspense>
   )
 }

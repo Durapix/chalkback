@@ -1,4 +1,4 @@
-import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { useAuth } from './auth'
 import { Dashboard } from './pages/Dashboard'
 import { LessonPage } from './pages/LessonPage'
@@ -28,10 +28,16 @@ export function App() {
       <main className="cb-main">
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/lessons/:lessonId" element={<LessonPage />} />
+          <Route path="/lessons/:lessonId" element={<LessonRoute />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </div>
   )
+}
+
+// Remount per lesson so board selection and polling never leak between lessons.
+function LessonRoute() {
+  const { lessonId } = useParams()
+  return <LessonPage key={lessonId} />
 }
