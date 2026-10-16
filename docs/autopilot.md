@@ -25,16 +25,16 @@ finding gets its own `fix(...)` commit, so the history shows what the agent caug
 work. The landing page's timeline is generated from this history by
 `scripts/autopilot_log.py`.
 
-## Phase 1: local (now)
+## Phase 1: local
 
 The repository runs locally with real branches, merge commits and tags. There is no remote yet.
 
-## Phase 2: GitHub (once the owner connects `gh`)
+## Phase 2: GitHub (now)
 
 | Step | How |
 |---|---|
 | Pull requests | The agent pushes each branch and opens a PR with `gh pr create` |
-| Review | `.github/workflows/ai-review.yml` runs Claude on every PR. GitHub doesn't let a PR author approve their own PR, so the review is posted as comments ending in a verdict |
+| Review | `.github/workflows/ai-review.yml` runs Claude on every PR. GitHub doesn't let a PR author approve their own PR, so the review is posted as comments ending in a verdict. Needs the `ANTHROPIC_API_KEY` secret and the variable `AI_REVIEW_ENABLED=true`. Until then the agent posts its self-review as a PR comment |
 | Fixes | The agent addresses the comments with new commits on the same PR |
 | Merge | After CI is green and the verdict is "ready to merge", the agent merges with `gh pr merge` |
 | Releases | Pushing a `vX.Y.Z` tag runs `.github/workflows/release.yml`, which publishes a GitHub release from `CHANGELOG.md` |
