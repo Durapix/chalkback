@@ -1,5 +1,6 @@
 # Deploys main to the Hetzner server after CI passes.
 # Secrets: DEPLOY_HOST, DEPLOY_SSH_KEY (private key of the server's `deploy` user).
+# Variable: DEPLOY_ENABLED=true turns it on.
 name: Deploy
 
 on:
@@ -15,7 +16,8 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    # Stays off until the server exists: set the repository variable DEPLOY_ENABLED=true.
+    if: ${{ vars.DEPLOY_ENABLED == 'true' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     environment: production
     steps:

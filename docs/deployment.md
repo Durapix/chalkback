@@ -33,7 +33,24 @@ runs `deploy/deploy.sh`, which fast-forwards `main`, rebuilds and restarts the s
 for `/api/health`.
 
 Repository secrets: `DEPLOY_HOST`, `DEPLOY_SSH_KEY` (the private key matching the public key given
-to `bootstrap-server.sh`), and `ANTHROPIC_API_KEY` for AI reviews.
+to `bootstrap-server.sh`), and `ANTHROPIC_API_KEY` for AI reviews. Deploys stay off until you set
+the repository **variable** `DEPLOY_ENABLED=true`.
+
+## Running the production stack locally
+
+The same images run on your machine over plain HTTP, using `deploy/local.env` (local-only values):
+
+```bash
+cd deploy
+docker compose --env-file local.env up -d --build
+```
+
+Open <http://localhost:8080> (landing), <http://localhost:8080/app/> (app) and
+<http://localhost:8080/docs/>. Stop with `docker compose --env-file local.env down`; add `-v` to
+also wipe the database and uploads.
+
+`SITE_ADDRESS`, `PUBLIC_URL`, `HTTP_PORT` and `HTTPS_PORT` are what make this work. In production
+they default to the bare `DOMAIN`, `https://DOMAIN`, 80 and 443.
 
 ## Operations
 
