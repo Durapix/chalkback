@@ -1,5 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
+from app.imaging import remove_images
 from app.jobs import reconstruct_board
 from app.models import Board, JobStatus, User
 from app.routers.lessons import board_brief, own_lesson, visible_lesson
@@ -59,3 +60,5 @@ def delete_board(board_id: int, teacher: Teacher, db: DB):
     own_lesson(db, teacher, board.lesson_id)
     db.delete(board)
     db.commit()
+    if board.image_file:
+        remove_images([board.image_file])

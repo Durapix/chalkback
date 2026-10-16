@@ -2,7 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, statu
 from sqlalchemy import select
 
 from app.config import get_settings
-from app.imaging import UnsupportedUpload, store_upload
+from app.imaging import StoredImage, UnsupportedUpload, remove_images, store_upload
 from app.jobs import reconstruct_board, summarize_lesson
 from app.models import Board, JobStatus, Lesson, Role, User
 from app.routers.students import own_student
@@ -104,8 +104,11 @@ def update_lesson(lesson_id: int, body: LessonUpdate, teacher: Teacher, db: DB):
 
 @router.delete("/{lesson_id}", status_code=204)
 def delete_lesson(lesson_id: int, teacher: Teacher, db: DB):
-    db.delete(own_lesson(db, teacher, lesson_id))
+    lesson = own_lesson(db, teacher, lesson_id)
+    files = [b.image_file for b in lesson.boards if b.image_file]
+    db.delete(lesson)
     db.commit()
+    remove_images(files)
 
 
 @router.post("/{lesson_id}/boards", response_model=list[BoardBrief], status_code=201)
@@ -114,27 +117,33 @@ async def upload_boards(
 ):
     """Upload screenshots or PDF exports; each image / PDF page becomes a board."""
     lesson = own_lesson(db, teacher, lesson_id)
-    position = len(lesson.boards)
-    created: list[Board] = []
-    for upload in files:
-        data = await upload.read()
-        if len(data) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, f"{upload.filename} is too big")
-        try:
-            images = store_upload(data, upload.content_type or "", upload.filename or "")
-        except UnsupportedUpload as exc:
-            raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, str(exc)) from exc
-        for img in images:
-            board = Board(
-                lesson_id=lesson.id,
-                position=position,
-                image_file=img.file_name,
-                width=img.width,
-                height=img.height,
-            )
-            position += 1
-            db.add(board)
-            created.append(board)
+    stored: list[StoredImage] = []
+    try:
+        for upload in files:
+            data = await upload.read()
+            if len(data) > MAX_UPLOAD_BYTES:
+                raise HTTPException(
+                    status.HTTP_413_CONTENT_TOO_LARGE, f"{upload.filename} is too big"
+                )
+            try:
+                stored += store_upload(data, upload.content_type or "", upload.filename or "")
+            except UnsupportedUpload as exc:
+                raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, str(exc)) from exc
+    except HTTPException:
+        # All-or-nothing: drop images already written for earlier files in this request.
+        remove_images(img.file_name for img in stored)
+        raise
+    created = [
+        Board(
+            lesson_id=lesson.id,
+            position=position,
+            image_file=img.file_name,
+            width=img.width,
+            height=img.height,
+        )
+        for position, img in enumerate(stored, start=len(lesson.boards))
+    ]
+    db.add_all(created)
     db.commit()
     for board in created:
         tasks.add_task(reconstruct_board, board.id)

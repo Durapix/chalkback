@@ -3,6 +3,7 @@
 import base64
 import io
 import secrets
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -65,12 +66,17 @@ def image_path(file_name: str) -> Path:
     return get_settings().uploads_dir / file_name
 
 
+def remove_images(file_names: Iterable[str]) -> None:
+    for name in file_names:
+        image_path(name).unlink(missing_ok=True)
+
+
 def model_image(file_name: str) -> tuple[str, int, int, float]:
     """Base64 PNG sized for the vision model, its size, and the factor back to full size."""
-    img = Image.open(image_path(file_name))
-    full_w = img.width
-    img.thumbnail((MAX_MODEL_EDGE, MAX_MODEL_EDGE))
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
+    with Image.open(image_path(file_name)) as img:
+        full_w = img.width
+        img.thumbnail((MAX_MODEL_EDGE, MAX_MODEL_EDGE))
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
     factor = full_w / img.width
     return base64.standard_b64encode(buf.getvalue()).decode(), img.width, img.height, factor

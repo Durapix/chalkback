@@ -152,3 +152,36 @@ def test_scheduled_reminders_are_idempotent(client, teacher, outbox):
         second = asyncio.run(notify.dispatch_due_reminders(db))
     assert first == 1  # email only for this student
     assert second == 0
+
+
+def test_failed_multi_upload_leaves_no_files(client, teacher):
+    from app.config import get_settings
+
+    uploads = get_settings().uploads_dir
+    before = set(uploads.iterdir())
+    lesson_id = client.get("/api/lessons", headers=teacher).json()[0]["id"]
+    r = client.post(
+        f"/api/lessons/{lesson_id}/boards",
+        headers=teacher,
+        files=[
+            ("files", ("ok.png", png_bytes(), "image/png")),
+            ("files", ("bad.txt", b"x", "text/plain")),
+        ],
+    )
+    assert r.status_code == 415
+    assert set(uploads.iterdir()) == before
+
+
+def test_deleting_lesson_removes_images(client, teacher):
+    from app.config import get_settings
+
+    lesson_id = client.get("/api/lessons", headers=teacher).json()[0]["id"]
+    boards = client.post(
+        f"/api/lessons/{lesson_id}/boards",
+        headers=teacher,
+        files=[("files", ("ok.png", png_bytes(), "image/png"))],
+    ).json()
+    name = boards[0]["image_url"].rsplit("/", 1)[1]
+    assert (get_settings().uploads_dir / name).exists()
+    assert client.delete(f"/api/lessons/{lesson_id}", headers=teacher).status_code == 204
+    assert not (get_settings().uploads_dir / name).exists()
