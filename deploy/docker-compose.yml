@@ -55,7 +55,6 @@ services:
       - api
     environment:
       DOMAIN: ${DOMAIN:?set DOMAIN in deploy/.env}
-      ACME_EMAIL: ${ACME_EMAIL:-}
     ports:
       - "80:80"
       - "443:443"

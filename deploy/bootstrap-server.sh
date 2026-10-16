@@ -38,8 +38,14 @@ ufw allow 443/tcp
 ufw allow 443/udp
 ufw --force enable
 
-# SSH: keys only
-sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
+# SSH: keys only. sshd keeps the first value it reads and drop-ins are read before the main
+# file, so a 00- drop-in wins over e.g. cloud-init's "PasswordAuthentication yes".
+cat > /etc/ssh/sshd_config.d/00-chalkback.conf <<'SSHD'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin prohibit-password
+SSHD
+sshd -t
 systemctl reload ssh
 
 systemctl enable --now fail2ban unattended-upgrades
