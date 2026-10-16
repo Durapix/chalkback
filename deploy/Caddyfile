@@ -1,0 +1,47 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# API and board images
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle /files/* {
+		reverse_proxy api:8000
+	}
+
+	# React app (client-side routing)
+	redir /app /app/
+	handle_path /app/* {
+		root * /srv/app
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Documentation
+	redir /docs /docs/
+	handle_path /docs/* {
+		root * /srv/docs
+		file_server
+	}
+
+	# Landing / showcase page
+	handle {
+		root * /srv/landing
+		file_server
+	}
+
+	request_body {
+		max_size 120MB
+	}
+}
