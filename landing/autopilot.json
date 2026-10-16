@@ -1,6 +1,38 @@
 {
-  "commits": 11,
+  "commits": 26,
   "merges": [
+    {
+      "sha": "b389326",
+      "date": "2026-10-16T09:54:16+02:00",
+      "branch": "release/v0.1.0",
+      "summary": "Release 0.1.0. Verified on main: 12 API tests, ruff, tsc + vite build, mkdocs --strict, release-notes extraction.",
+      "commits": 2,
+      "review_fixes": 1
+    },
+    {
+      "sha": "b8b1d51",
+      "date": "2026-10-16T09:53:24+02:00",
+      "branch": "feat/deploy-ci",
+      "summary": "Production deployment and automation: Docker Compose (Postgres, API, Caddy edge serving landing, app and docs), Hetzner bootstrap and deploy scripts, CI, AI PR review, tag-driven releases and CD. Compose and workflow YAML validated; full container run pending a running Docker daemon/server. Self-reviewed.",
+      "commits": 5,
+      "review_fixes": 1
+    },
+    {
+      "sha": "5e23b57",
+      "date": "2026-10-16T09:51:30+02:00",
+      "branch": "docs/mkdocs",
+      "summary": "Documentation site (MkDocs Material): overview, getting started, architecture with diagrams, AI pipeline, reminders, API reference, privacy and roadmap. Builds with --strict.",
+      "commits": 2,
+      "review_fixes": 0
+    },
+    {
+      "sha": "3fc7ee5",
+      "date": "2026-10-16T09:48:34+02:00",
+      "branch": "feat/landing",
+      "summary": "Static showcase landing page with an animated reconstruction hero and a timeline generated from the repository's own merge history. Checked at desktop and phone widths (no horizontal scroll).",
+      "commits": 2,
+      "review_fixes": 0
+    },
     {
       "sha": "b084e69",
       "date": "2026-10-16T09:45:29+02:00",
@@ -18,5 +50,10 @@
       "review_fixes": 1
     }
   ],
-  "releases": []
+  "releases": [
+    {
+      "name": "v0.1.0",
+      "date": "2026-10-16T09:54:16+02:00"
+    }
+  ]
 }
