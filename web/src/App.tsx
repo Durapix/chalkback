@@ -13,7 +13,7 @@ export function App() {
     <div className="cb-shell">
       <header className="cb-topbar">
         <Link to="/" className="cb-brand">
-          <img src="/favicon.svg" alt="" width={26} height={26} />
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={26} height={26} />
           Chalkback
         </Link>
         <div className="cb-topbar-user">
