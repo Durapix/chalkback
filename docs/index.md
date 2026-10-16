@@ -17,7 +17,7 @@ and keep working on them.
 
 !!! info "Built on autopilot"
     The whole project was written, reviewed, merged, released, documented and deployed by an AI
-    coding agent. See the "Built on autopilot" section of the landing page.
+    coding agent. See [Built on autopilot](autopilot.md).
 
 ## At a glance
 
