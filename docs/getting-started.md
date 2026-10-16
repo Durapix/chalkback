@@ -52,5 +52,5 @@ cd web && npm run build
 ## Docs
 
 ```bash
-uvx --with mkdocs-material mkdocs serve   # http://localhost:8000/docs/
+uvx --with-requirements docs/requirements.txt mkdocs serve
 ```

@@ -3,10 +3,10 @@
 ## Waiting on the owner
 
 - [ ] **GitHub repository + `gh` CLI.** This enables real pull requests, AI review, auto-merge and
-  GitHub releases (see [Built on autopilot](autopilot.md)).
+  GitHub releases.
 - [ ] **Claude API key + budget.** Switch the pipeline from mock mode to real reconstruction.
 - [ ] **Real board material.** Subject(s), count, and language. This tunes the reconstruction prompt.
-- [ ] **Hetzner server + domain.** First production deploy (see [Deployment](deployment.md)).
+- [ ] **Hetzner server + domain.** First production deploy.
 - [ ] **tldraw license.** Decide on a production license key vs. the watermarked option.
 
 ## Next up
