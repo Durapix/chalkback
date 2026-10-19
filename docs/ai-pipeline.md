@@ -37,6 +37,40 @@ Text is transcribed exactly as written, in the original language and script.
 
 draw.io boards never reach this step: they are imported exactly and for free.
 
+## Reading flowcharts as algorithms
+
+Before a recap is written, every board's flowcharts are turned into structured pseudocode by
+`api/app/flowchart.py`. This step is deterministic and needs no AI. A recap therefore works from
+the algorithm, not from labels in reading order:
+
+```text
+Algorithm “САБИРАЊЕ помоћу бројања”:
+  START
+  INPUT A, B
+  Постави резултат на А
+  REPEAT while “Понови B пута”:
+    Увећај резултат за 1
+  OUTPUT Резултат
+  END
+```
+
+The analysis follows how the boards are drawn:
+
+| On the board | Read as |
+|---|---|
+| Ellipse "Почетак" / "Крај" | START / END |
+| Trapezoid | INPUT (first, or labelled "Улаз") or OUTPUT (before the end, or "Излаз") |
+| Diamond | IF, or REPEAT when one branch leads back to it (the loop body). Branch labels come from the arrow or from short text next to it (T/F, Да/Не, 1/2/3) |
+| Empty circle | Where branches meet again |
+| Shapes inside a larger box | One unit ("Boxed together"); a box an arrow enters and returns from is a **call**, and nested calls are recursion |
+| Shapes touching each other | One UNIT, read top to bottom (or left to right) |
+| Text just above the start or below the end | The algorithm's title |
+| Arrows between plain shapes (graphs, circuits, object diagrams) | Not an algorithm: listed as connections |
+
+The recap prompt then asks the model to work out what each algorithm computes, to treat boxed
+units as wholes, and to point out when algorithms build on each other. Without an API key, the
+offline recap describes each algorithm's structure (inputs, loops, decisions, calls, output).
+
 ## 2. Lesson summary
 
 `summarize(lesson, student_name, language)` builds the material from the lesson title, the tutor's

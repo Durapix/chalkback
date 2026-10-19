@@ -20,6 +20,12 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Recaps understand flowcharts.** Boards' flowcharts are read as algorithms: START/INPUT/
+  OUTPUT, IF and REPEAT with branch labels (including T/F written next to arrows), boxed or
+  joined shapes as units, called boxes as calls and recursion, and titles above or below a
+  chart. The recap prompt asks what each algorithm computes, and the offline recap describes
+  their structure instead of repeating labels.
+
 - Board reconstruction sends its vocabulary as a validated tool schema instead of structured
   outputs, which rejected it as too large. It streams, with room for dense boards. Tested on two
   real Miro collages for $0.37 in total.

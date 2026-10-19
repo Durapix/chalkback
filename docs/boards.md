@@ -29,6 +29,9 @@ never downloaded or served, for safety.
 The original file is stored outside the public `/files` folder. **Re-run** on a board imports it
 again from that file, which is useful after importer improvements.
 
+Flowcharts on imported boards are also read as algorithms (steps, branches, loops, calls) for
+the lesson recap. See [AI pipeline](ai-pipeline.md#reading-flowcharts-as-algorithms).
+
 ## Screenshots and photos (AI)
 
 For pictures of boards (for example Miro screenshots), Claude describes what it sees using these
