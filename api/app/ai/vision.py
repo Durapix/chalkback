@@ -10,6 +10,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
+from app.flowchart import analyze
 from app.scene import (
     CodeElement,
     ConnectorElement,
@@ -323,9 +324,14 @@ class VisionScene(BaseModel):
                     )
                 )
         # Frames are backgrounds and regions sit under the transcribed elements.
-        return Scene(
+        scene = Scene(
             title=self.title,
             transcript=self.transcript,
             source="ai",
             elements=[*frames, *regions, *out],
         )
+        # Flowcharts drawn with shapes and connectors are also read as algorithms.
+        charts = analyze(scene)
+        if charts:
+            scene.transcript += "\n\n" + "\n\n".join(c.text() for c in charts)
+        return scene
