@@ -19,7 +19,6 @@ export const ORIGINAL_META = { chalkback: 'original' }
 const FILES = '/files/'
 const S_FONT_PX = 18 // tldraw font size "s"
 const LINE_HEIGHT = 1.35
-const NOTE_SIDE = 200 // tldraw notes are 200x200 at scale 1
 
 type Ctx = {
   ids: Map<string, TLShapeId>
@@ -67,7 +66,8 @@ function elementToShape(el: SceneElement, ctx: Ctx): TLShapePartial | null {
           size: el.font === 'sans' ? 's' : el.size,
           font: el.font,
           textAlign: el.align,
-          autoSize: false,
+          // Unwrapped, left-aligned text keeps its own lines (AI text); boxes wrap (draw.io).
+          autoSize: !el.wrap && el.align === 'start',
           w: Math.max(el.w / scale, 8),
           scale,
         },
@@ -86,7 +86,7 @@ function elementToShape(el: SceneElement, ctx: Ctx): TLShapePartial | null {
           size: 's',
           font: 'mono',
           textAlign: 'start',
-          autoSize: false,
+          autoSize: true, // code keeps its own line breaks
           w: Math.max(el.w / scale, 8),
           scale,
         },
@@ -120,20 +120,41 @@ function elementToShape(el: SceneElement, ctx: Ctx): TLShapePartial | null {
           richText: toRichText(el.label),
         },
       }
-    case 'note':
+    case 'note': {
+      // Miro-style sticker: a flat colored square whose text fills it, readable even when
+      // the sticker is small (tldraw's own notes shrink their text with the note).
+      const side = Math.max(el.w, 8)
+      const textLines = el.text.split('\n')
+      const longest = Math.max(1, ...textLines.map((l) => l.length))
+      const lines = textLines.length
+      // tldraw pads geo labels by LABEL_PAD (scaled) on each side; fit text inside that.
+      const LABEL_PAD = 16
+      const scale =
+        0.95 *
+        Math.min(
+          (side * 0.4) / S_FONT_PX,
+          side / (longest * 0.62 * S_FONT_PX + 2 * LABEL_PAD),
+          side / (lines * LINE_HEIGHT * S_FONT_PX + 2 * LABEL_PAD),
+        )
       return {
         id,
-        type: 'note',
+        type: 'geo',
         x: el.x,
         y: el.y,
         props: {
+          geo: 'rectangle',
+          w: side,
+          h: side,
           color: el.color,
+          labelColor: 'black',
+          fill: 'solid',
           font: el.font,
-          size: 'xl', // Miro sticker text is large relative to the sticker
-          scale: Math.max(el.w, 8) / NOTE_SIDE,
+          size: 's',
+          scale: Math.max(scale, 0.05),
           richText: toRichText(el.text),
         },
       }
+    }
     case 'connector':
     case 'arrow': {
       const dx = el.x2 - el.x1
