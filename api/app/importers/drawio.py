@@ -254,20 +254,24 @@ class _Page:
             st.get("strokeColor") == "none" and st.get("fillColor") in (None, "none")
         ):
             if cell.label:
+                align = _align(st.get("align", "center"))
+                pad = float(st.get("spacing", 2) or 0)
+                left = pad + float(st.get("spacingLeft", 0) or 0) if align == "start" else 0
+                right = pad + float(st.get("spacingRight", 0) or 0) if align == "end" else 0
                 self.add(
                     cell,
                     TextElement(
                         kind="text",
                         id=cell.id,
-                        x=x,
+                        x=x + left,
                         y=y,
-                        w=max(w, 10),
+                        w=max(w - left - right, 10),
                         h=h,
                         text=cell.label,
                         size="s",
                         color=to_palette(st.get("fontColor")),
                         font="sans",
-                        align=_align(st.get("align", "center")),
+                        align=align,
                         wrap=st.get("whiteSpace") == "wrap",
                         scale=scale,
                         rotation=rotation,
@@ -276,6 +280,7 @@ class _Page:
             return
 
         geo, extra_rotation = _geo_kind(st)
+        box = (x, y, w, h)
         if extra_rotation % 180 == 90:
             # A shape turned by a quarter fills the original box only with width and height
             # swapped (rotation is around the center).
@@ -305,7 +310,8 @@ class _Page:
                 color=color,
                 fill=fill_style(fill_value, default_white=not is_lane),
                 dash="dashed" if st.get("dashed") == "1" else "solid",
-                label=cell.label,
+                # draw.io turns only the outline of e.g. a triangle, never its label.
+                label="" if extra_rotation else cell.label,
                 label_color=to_palette(st.get("fontColor")) if st.get("fontColor") else None,
                 font="sans",
                 size="s",
@@ -315,8 +321,39 @@ class _Page:
                 rotation=rotation + extra_rotation,
             ),
         )
+        if extra_rotation and cell.label:
+            bx, by, bw, bh = box
+            self.elements.append(
+                TextElement(
+                    kind="text",
+                    id=f"{cell.id}~label",
+                    x=bx,
+                    y=by,
+                    w=bw,
+                    h=bh,
+                    text=cell.label,
+                    size="s",
+                    font="sans",
+                    align="middle",
+                    scale=scale,
+                    color=to_palette(st.get("fontColor")),
+                    opacity=_opacity(st),
+                )
+            )
+        if is_lane and st.get("horizontal") != "0":
+            line_y = y + float(st.get("startSize", 26) or 26)
+            self.elements.append(
+                DrawElement(
+                    kind="draw",
+                    id=f"{cell.id}~header",
+                    color=color,
+                    opacity=_opacity(st),
+                    points=[Point(x=x, y=line_y), Point(x=x + w, y=line_y)],
+                )
+            )
 
     def add(self, cell: _Cell, element) -> None:
+        element.opacity = _opacity(cell.style)
         self.elements.append(element)
         self.rendered.add(cell.id)
 
@@ -370,7 +407,7 @@ class _Page:
         strokes = _stencil_strokes(st["shape"][len("stencil(") : -1])
         width = float(st.get("strokeWidth", 1) or 1)
         size = "s" if width <= 2 else "m" if width <= 4 else "l"
-        for i, (w0, h0, points) in enumerate(strokes):
+        for i, (w0, h0, points, filled) in enumerate(strokes):
             if len(points) < 2:
                 continue
             abs_points = [Point(x=x + px / w0 * w, y=y + py / h0 * h) for px, py in points]
@@ -379,9 +416,13 @@ class _Page:
                     kind="draw",
                     id=cell.id if i == 0 else f"{cell.id}~{i}",
                     points=abs_points,
-                    color=to_palette(st.get("strokeColor")),
+                    # Newer draw.io stores ink as the filled outline of the stroke.
+                    color=to_palette(st.get("fillColor") if filled else st.get("strokeColor")),
                     freehand=True,
-                    size=size,
+                    closed=filled,
+                    filled=filled,
+                    size="s" if filled else size,
+                    opacity=_opacity(st),
                 )
             )
         self.rendered.add(cell.id)
@@ -444,8 +485,16 @@ class _Page:
                 dash="dashed" if st.get("dashed") == "1" else "solid",
                 label="\n".join(t for t in labels if t),
                 scale=round(float(st.get("fontSize", DEFAULT_FONT_PX)) / TLDRAW_S_FONT_PX, 3),
+                opacity=_opacity(st),
             )
         )
+
+
+def _opacity(st: dict[str, str]) -> float:
+    try:
+        return max(0.05, min(1.0, float(st.get("opacity", 100)) / 100))
+    except ValueError:
+        return 1.0
 
 
 def _align(value: str) -> str:
@@ -494,21 +543,26 @@ def _geo_kind(st: dict[str, str]) -> tuple[GeoKind, float]:
     return "rectangle", 0
 
 
-def _stencil_strokes(encoded: str) -> list[tuple[float, float, list[tuple[float, float]]]]:
-    """Decode a draw.io stencil (how freehand pen strokes are stored) into polylines."""
+def _stencil_strokes(
+    encoded: str,
+) -> list[tuple[float, float, list[tuple[float, float]], bool]]:
+    """Decode a draw.io stencil (how freehand pen strokes are stored) into polylines.
+
+    The flag says whether the path is filled (an ink outline) rather than stroked."""
     try:
         shape = ET.fromstring(_inflate(encoded))
     except (DrawioError, ET.ParseError):
         return []
     w0 = float(shape.get("w", 100) or 100)
     h0 = float(shape.get("h", 100) or 100)
-    strokes: list[tuple[float, float, list[tuple[float, float]]]] = []
+    filled = any(node.tag in ("fill", "fillstroke") for node in shape.iter())
+    strokes: list[tuple[float, float, list[tuple[float, float]], bool]] = []
     for path in shape.iter("path"):
         current: list[tuple[float, float]] = []
         for cmd in path:
             if cmd.tag == "move":
                 if len(current) > 1:
-                    strokes.append((w0, h0, current))
+                    strokes.append((w0, h0, current, filled))
                 current = [(float(cmd.get("x", 0)), float(cmd.get("y", 0)))]
             elif cmd.tag == "line":
                 current.append((float(cmd.get("x", 0)), float(cmd.get("y", 0))))
@@ -524,7 +578,7 @@ def _stencil_strokes(encoded: str) -> list[tuple[float, float, list[tuple[float,
             elif cmd.tag == "close" and current:
                 current.append(current[0])
         if len(current) > 1:
-            strokes.append((w0, h0, current))
+            strokes.append((w0, h0, current, filled))
     return strokes
 
 
@@ -595,6 +649,6 @@ def _title(page_name: str, scene: Scene) -> str:
         if (getattr(el, "text", "") or getattr(el, "label", "")).strip()
     )
     for _, _, text in labels:
-        if len(text) > 3 and not text.replace(".", "").isdigit():
+        if sum(ch.isalpha() for ch in text) >= 3:
             return text[:80]
     return "draw.io board"

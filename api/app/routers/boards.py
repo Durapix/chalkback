@@ -6,6 +6,7 @@ from app.ingest import IngestError, owned_files, reimport, scene_files
 from app.jobs import reconstruct_board
 from app.models import Board, JobStatus, User
 from app.routers.lessons import board_brief, own_lesson, visible_lesson
+from app.scene import Scene
 from app.schemas import BoardOut, SnapshotIn
 from app.security import DB, CurrentUser, Teacher
 
@@ -24,7 +25,8 @@ def board_out(board: Board) -> BoardOut:
     return BoardOut(
         **board_brief(board).model_dump(),
         lesson_id=board.lesson_id,
-        scene=board.scene,
+        # Normalized so scenes stored by older versions get today's defaults.
+        scene=Scene.model_validate(board.scene).model_dump() if board.scene else None,
         snapshot=board.snapshot,
         updated_at=board.updated_at,
     )

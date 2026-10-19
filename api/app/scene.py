@@ -41,6 +41,7 @@ class Point(BaseModel):
 class Base(BaseModel):
     id: str = ""
     rotation: float = 0  # degrees, clockwise, around the element's center
+    opacity: float = 1  # e.g. faded steps that are "not active yet"
 
 
 class TextElement(Base):
@@ -146,6 +147,7 @@ class DrawElement(Base):
     color: Color = "black"
     freehand: bool = False
     closed: bool = False
+    filled: bool = False  # closed outline filled with the color (draw.io pen ink)
     size: Size = "s"
 
 

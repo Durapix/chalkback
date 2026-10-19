@@ -47,7 +47,7 @@ def test_nested_shapes_get_absolute_positions(pages):
     scene = pages[0].scene
     lane, row = by_id(scene, "lane"), by_id(scene, "r2")
     assert isinstance(row, TextElement)
-    assert (row.x, row.y) == (lane.x, lane.y + 56)
+    assert row.y == lane.y + 56
     assert row.text == "name\nemail"
     # The group container itself is not drawn; its children are, offset by the group.
     assert not any(el.id == "grp" for el in scene.elements)
@@ -67,6 +67,9 @@ def test_styles_pen_strokes_and_images(pages):
     assert pages[0].files == [pic.file]
     tri = by_id(scene, "tri")  # draw.io triangles point right: rotated, box swapped
     assert (tri.rotation, tri.w, tri.h) == (90, 60, 40)
+    # Table containers get the line under their title row.
+    header = by_id(scene, "lane~header")
+    assert [p.y for p in header.points] == [by_id(scene, "lane").y + 26] * 2
 
 
 def test_transcript_reads_labels_and_connections(pages):
