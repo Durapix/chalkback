@@ -211,7 +211,7 @@ function NewStudent({ onCreated }: { onCreated: () => void }) {
       </label>
       <label>
         Summary language
-        <input name="language" defaultValue="English" />
+        <input name="language" defaultValue="Serbian" />
       </label>
       {error && <div className="cb-error">{error}</div>}
       <div className="cb-actions">

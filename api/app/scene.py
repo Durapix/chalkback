@@ -86,6 +86,7 @@ class GeoElement(Base):
     align: Align = "middle"
     valign: Align = "middle"
     scale: float = 1
+    flip_y: bool = False  # outline mirrored vertically (label stays upright)
 
 
 class NoteElement(Base):
@@ -148,6 +149,7 @@ class DrawElement(Base):
     freehand: bool = False
     closed: bool = False
     filled: bool = False  # closed outline filled with the color (draw.io pen ink)
+    smooth: bool = True  # False: straight segments between points (wires, polylines)
     size: Size = "s"
 
 
@@ -274,6 +276,27 @@ def fit_text_scale(width: float, text: str, mono: bool = False) -> float:
 LABEL_PAD = 16  # tldraw's padding around shape labels, in label-scale units
 
 
+def fit_wrapped_label_scale(w: float, h: float, text: str, max_scale: float) -> float:
+    """Largest label scale <= max_scale whose word-wrapped text fits a w x h shape.
+
+    tldraw grows a shape that is too short for its label; on boards where shapes border each
+    other (tables, joined steps, circuits) that would make them overlap.
+    """
+    paragraphs = [p for p in text.splitlines() if p.strip()] or [""]
+    scale = max_scale
+    while scale > 0.15:
+        avail = w - 2 * LABEL_PAD * scale
+        char_px = 0.55 * TLDRAW_S_FONT_PX * scale
+        if avail > char_px:
+            per_line = max(1, int(avail // char_px))
+            lines = sum(max(1, -(-len(p) // per_line)) for p in paragraphs)
+            height = lines * 1.35 * TLDRAW_S_FONT_PX * scale + 2 * LABEL_PAD * scale
+            if height <= h:
+                return round(scale, 3)
+        scale *= 0.92
+    return round(scale, 3)
+
+
 def fit_label_scale(w: float, h: float, text: str) -> float:
     """Label scale that fits `text` (no wrapping inside words) into a w x h shape."""
     lines = text.splitlines() or [""]
@@ -281,6 +304,9 @@ def fit_label_scale(w: float, h: float, text: str) -> float:
     by_width = w / (longest * 0.62 * TLDRAW_S_FONT_PX + 2 * LABEL_PAD)
     by_height = h / (len(lines) * 1.35 * TLDRAW_S_FONT_PX + 2 * LABEL_PAD)
     return round(max(0.05, 0.95 * min(by_width, by_height, 4.0)), 3)
+
+
+MARK_COLORS = {"red": "red", "light-red": "red", "green": "green", "light-green": "green"}
 
 
 def reading_order_text(
@@ -294,11 +320,14 @@ def reading_order_text(
     labelled: list[tuple[float, float, str]] = []
     names = {}
     for el in scene.elements:
-        text = ""
+        text, mark = "", None
         if isinstance(el, TextElement | NoteElement | CodeElement):
             text = el.text
         elif isinstance(el, GeoElement):
             text = el.label
+            # Cells colored red or green usually mark rows ruled out / kept (e.g. a query
+            # filtering a table step by step).
+            mark = MARK_COLORS.get(el.color) if el.fill in ("solid", "fill") else None
         elif isinstance(el, MathElement):
             text = f"${el.latex}$"
         elif isinstance(el, FrameElement):
@@ -308,7 +337,7 @@ def reading_order_text(
         if el.id:
             names[el.id] = " ".join(text.split())[:40]
         if not (el.id in skip_ids or " ".join(text.split()) in skip_texts):
-            labelled.append((el.y, el.x, text.strip()))
+            labelled.append((el.y, el.x, text.strip() + (f" ({mark})" if mark else "")))
     # Group into rows of roughly the same height so side-by-side items read left to right.
     labelled.sort()
     lines, row, row_y = [], [], None

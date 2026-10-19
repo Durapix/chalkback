@@ -130,3 +130,19 @@ def test_offline_recap_describes_algorithms_not_labels():
     assert summary.key_points[0].startswith("“Add by counting”: takes A, B")
     assert "algorithm" in summary.recap_message
     assert "A, B" in summary.review_suggestions[0]
+
+
+def test_entity_relationship_diagrams_are_not_algorithms():
+    from app.flowchart import analyze_er
+
+    s = scene(
+        geo("room", "rectangle", "Room", 0, 0),
+        geo("rel", "diamond", "is of type", 200, 0, 80, 80),
+        geo("type", "rectangle", "Room types", 400, 0),
+        geo("place", "rectangle", "Accommodation", 0, 200),
+        arrow("room", "rel"), arrow("rel", "type"), arrow("room", "place"),
+    )  # fmt: skip
+    assert analyze(s) == []
+    (er,) = analyze_er(s)
+    assert er.relations == ["Room —[is of type]→ Room types", "Room → Accommodation"]
+    assert "Entity-relationship diagram" in board_reading(s)
