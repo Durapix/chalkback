@@ -22,6 +22,8 @@ export function BoardEditor({ board }: { board: Board }) {
 
   const onMount = (editor: Editor) => {
     editorRef.current = editor
+    // Dev builds expose the editor for debugging and visual checks from the console.
+    if (import.meta.env.DEV) (window as unknown as { editor: Editor }).editor = editor
     if (board.snapshot) {
       loadSnapshot(editor.store, board.snapshot as Partial<TLEditorSnapshot>)
       refreshOriginalAsset(editor, board)

@@ -27,27 +27,118 @@ export interface BoardBrief {
   title: string | null
 }
 
-export type Color = 'black' | 'grey' | 'blue' | 'light-blue' | 'green' | 'red' | 'orange' | 'violet'
+// Mirrors api/app/scene.py. Coordinates and sizes are board pixels; `scale` only enlarges
+// text, labels and strokes.
+export type Color =
+  | 'black'
+  | 'grey'
+  | 'light-violet'
+  | 'violet'
+  | 'blue'
+  | 'light-blue'
+  | 'yellow'
+  | 'orange'
+  | 'green'
+  | 'light-green'
+  | 'light-red'
+  | 'red'
+  | 'white'
+export type Font = 'draw' | 'sans' | 'serif' | 'mono'
+export type Size = 's' | 'm' | 'l' | 'xl'
+export type Align = 'start' | 'middle' | 'end'
+export type Arrowhead = 'none' | 'arrow' | 'triangle' | 'dot' | 'diamond'
+export interface Pt {
+  x: number
+  y: number
+}
+interface ElementBase {
+  id: string
+  rotation: number
+  opacity: number
+}
 
-export type SceneElement =
-  | { kind: 'text'; x: number; y: number; w: number; text: string; size: 's' | 'm' | 'l' | 'xl'; color: Color }
-  | { kind: 'math'; x: number; y: number; w: number; h: number; latex: string; color: Color }
-  | {
-      kind: 'geo'
-      x: number
-      y: number
-      w: number
-      h: number
-      geo: 'rectangle' | 'ellipse' | 'triangle' | 'diamond'
-      color: Color
-      label: string
-    }
-  | { kind: 'arrow'; x1: number; y1: number; x2: number; y2: number; color: Color; label: string }
-  | { kind: 'draw'; points: { x: number; y: number }[]; color: Color }
+export type SceneElement = ElementBase &
+  (
+    | {
+        kind: 'text'
+        x: number
+        y: number
+        w: number
+        h: number
+        text: string
+        size: Size
+        color: Color
+        font: Font
+        align: Align
+        wrap: boolean
+        scale: number
+      }
+    | { kind: 'math'; x: number; y: number; w: number; h: number; latex: string; color: Color }
+    | {
+        kind: 'geo'
+        x: number
+        y: number
+        w: number
+        h: number
+        geo: string
+        color: Color
+        fill: 'none' | 'semi' | 'solid' | 'fill'
+        dash: 'solid' | 'dashed' | 'dotted' | 'draw'
+        label: string
+        label_color: Color | null
+        font: Font
+        size: Size
+        align: Align
+        valign: Align
+        scale: number
+      }
+    | { kind: 'note'; x: number; y: number; w: number; text: string; color: Color; font: Font }
+    | { kind: 'code'; x: number; y: number; w: number; text: string; color: Color; scale: number }
+    | {
+        kind: 'connector' | 'arrow'
+        x1: number
+        y1: number
+        x2: number
+        y2: number
+        from_id: string
+        to_id: string
+        from_anchor: Pt | null
+        to_anchor: Pt | null
+        route: 'straight' | 'elbow' | 'curved'
+        bend: number
+        start_head: Arrowhead
+        end_head: Arrowhead
+        color: Color
+        dash: 'solid' | 'dashed' | 'dotted' | 'draw'
+        label: string
+        scale: number
+      }
+    | {
+        kind: 'draw'
+        points: Pt[]
+        color: Color
+        freehand: boolean
+        closed: boolean
+        filled: boolean
+        size: Size
+      }
+    | {
+        kind: 'image'
+        x: number
+        y: number
+        w: number
+        h: number
+        file: string
+        crop: { x: number; y: number; w: number; h: number } | null
+        alt: string
+      }
+    | { kind: 'frame'; x: number; y: number; w: number; h: number; name: string }
+  )
 
 export interface Scene {
   title: string
   transcript: string
+  source: 'ai' | 'drawio' | 'mock'
   elements: SceneElement[]
 }
 

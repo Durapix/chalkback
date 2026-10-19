@@ -1,5 +1,5 @@
 from app.ai.claude import structured_call
-from app.ai.scene import LessonSummary
+from app.ai.schemas import LessonSummary
 from app.config import get_settings
 from app.models import Lesson
 
@@ -42,20 +42,27 @@ async def summarize(lesson: Lesson, student_name: str, language: str) -> LessonS
 
 
 def mock_summary(lesson: Lesson, student_name: str) -> LessonSummary:
-    titles = [b.scene.get("title", "") for b in lesson.boards if b.scene] or [lesson.title]
+    """Deterministic summary built from the boards' own content (no AI)."""
+    scenes = [b.scene for b in lesson.boards if b.scene]
+    titles = [s.get("title", "") for s in scenes if s.get("title")] or [lesson.title]
+    lines = [
+        line.strip()
+        for s in scenes
+        for line in s.get("transcript", "").splitlines()
+        if len(line.strip()) > 3 and line.strip() != "Connections:"
+    ]
+    formulas = [
+        el["latex"] for s in scenes for el in s.get("elements", []) if el.get("kind") == "math"
+    ]
     return LessonSummary(
         headline=f"{lesson.title}: {', '.join(titles)}",
         topics=titles,
-        key_points=[
-            "A quadratic equation has the form ax^2 + bx + c = 0 with a ≠ 0.",
-            "The discriminant D = b^2 - 4ac tells you how many real roots there are.",
-        ],
-        formulas=["D = b^2 - 4ac", "x_{1,2} = \\frac{-b \\pm \\sqrt{D}}{2a}"],
-        exercises=["Solved x^2 - 5x + 6 = 0 using the discriminant"],
+        key_points=lines[:3] or [lesson.notes or lesson.title],
+        formulas=formulas[:3],
+        exercises=[f"Worked through the board “{t}”" for t in titles[:3]],
         recap_message=(
-            f"Hi {student_name}! Last time we worked on {lesson.title.lower()}. "
-            "Remember: compute the discriminant first, then use the formula for the roots. "
-            "You did great!"
+            f"Hi {student_name}! Last time we worked on {lesson.title}. "
+            "Open the boards again and try to explain each step in your own words."
         ),
-        review_suggestions=["Solve two equations with D > 0 and one with D < 0."],
+        review_suggestions=[f"Redo the example from “{titles[0]}” on your own."],
     )

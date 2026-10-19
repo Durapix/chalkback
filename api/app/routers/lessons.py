@@ -2,7 +2,8 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, statu
 from sqlalchemy import select
 
 from app.config import get_settings
-from app.imaging import StoredImage, UnsupportedUpload, remove_images, store_upload
+from app.imaging import UnsupportedUpload, remove_images, remove_source_files
+from app.ingest import Ingested, IngestError, ingest, owned_files
 from app.jobs import reconstruct_board, summarize_lesson
 from app.models import Board, JobStatus, Lesson, Role, User
 from app.routers.students import own_student
@@ -105,19 +106,22 @@ def update_lesson(lesson_id: int, body: LessonUpdate, teacher: Teacher, db: DB):
 @router.delete("/{lesson_id}", status_code=204)
 def delete_lesson(lesson_id: int, teacher: Teacher, db: DB):
     lesson = own_lesson(db, teacher, lesson_id)
-    files = [b.image_file for b in lesson.boards if b.image_file]
+    uploads, sources = owned_files(lesson.boards, keep=[])
     db.delete(lesson)
     db.commit()
-    remove_images(files)
+    remove_images(uploads)
+    remove_source_files(sources)
 
 
 @router.post("/{lesson_id}/boards", response_model=list[BoardBrief], status_code=201)
 async def upload_boards(
     lesson_id: int, files: list[UploadFile], teacher: Teacher, db: DB, tasks: BackgroundTasks
 ):
-    """Upload screenshots or PDF exports; each image / PDF page becomes a board."""
+    """Upload boards: screenshots, photos and PDF exports are reconstructed by the AI;
+    draw.io exports (HTML, .drawio, .xml) are imported exactly and are ready at once.
+    Each image, PDF page or draw.io page becomes one board."""
     lesson = own_lesson(db, teacher, lesson_id)
-    stored: list[StoredImage] = []
+    result = Ingested()
     try:
         for upload in files:
             data = await upload.read()
@@ -126,28 +130,23 @@ async def upload_boards(
                     status.HTTP_413_CONTENT_TOO_LARGE, f"{upload.filename} is too big"
                 )
             try:
-                stored += store_upload(data, upload.content_type or "", upload.filename or "")
+                ingest(data, upload.content_type or "", upload.filename or "", result)
             except UnsupportedUpload as exc:
                 raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, str(exc)) from exc
+            except IngestError as exc:
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     except HTTPException:
-        # All-or-nothing: drop images already written for earlier files in this request.
-        remove_images(img.file_name for img in stored)
+        # All-or-nothing: drop files already written for earlier files in this request.
+        result.discard()
         raise
-    created = [
-        Board(
-            lesson_id=lesson.id,
-            position=position,
-            image_file=img.file_name,
-            width=img.width,
-            height=img.height,
-        )
-        for position, img in enumerate(stored, start=len(lesson.boards))
-    ]
-    db.add_all(created)
+    for position, board in enumerate(result.boards, start=len(lesson.boards)):
+        board.lesson_id, board.position = lesson.id, position
+    db.add_all(result.boards)
     db.commit()
-    for board in created:
-        tasks.add_task(reconstruct_board, board.id)
-    return [board_brief(b) for b in created]
+    for board in result.boards:
+        if board.status != JobStatus.ready:
+            tasks.add_task(reconstruct_board, board.id)
+    return [board_brief(b) for b in result.boards]
 
 
 @router.post("/{lesson_id}/summarize", response_model=LessonOut, status_code=202)

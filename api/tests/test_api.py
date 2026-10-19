@@ -73,7 +73,7 @@ def test_full_lesson_flow(client, teacher):
     board = client.get(f"/api/boards/{board_id}", headers=teacher).json()
     assert board["status"] == "ready"
     assert board["width"] == 800
-    assert {el["kind"] for el in board["scene"]["elements"]} >= {"text", "math", "arrow"}
+    assert {el["kind"] for el in board["scene"]["elements"]} >= {"note", "code", "connector"}
     image = client.get(board["image_url"].replace("http://testserver", ""))
     assert image.status_code == 200
 
@@ -185,3 +185,54 @@ def test_deleting_lesson_removes_images(client, teacher):
     assert (get_settings().uploads_dir / name).exists()
     assert client.delete(f"/api/lessons/{lesson_id}", headers=teacher).status_code == 204
     assert not (get_settings().uploads_dir / name).exists()
+
+
+def test_drawio_upload_is_ready_at_once_and_reimportable(client, teacher):
+    from app.config import get_settings
+    from tests.test_import import FIXTURE
+
+    settings = get_settings()
+    lesson_id = client.get("/api/lessons", headers=teacher).json()[0]["id"]
+    sources_before = set(settings.sources_dir.iterdir())
+    r = client.post(
+        f"/api/lessons/{lesson_id}/boards",
+        headers=teacher,
+        files=[("files", ("lesson.drawio", FIXTURE.read_bytes(), "application/octet-stream"))],
+    )
+    assert r.status_code == 201, r.text
+    boards = r.json()
+    assert [b["status"] for b in boards] == ["ready", "ready"]
+    assert [b["title"] for b in boards] == ["Linked list", "Flowchart"]
+    assert all(b["image_url"] is None for b in boards)
+
+    board = client.get(f"/api/boards/{boards[0]['id']}", headers=teacher).json()
+    assert board["scene"]["source"] == "drawio"
+    (pic,) = [el for el in board["scene"]["elements"] if el["kind"] == "image"]
+    assert client.get(f"/files/{pic['file']}").status_code == 200
+    # The original document is kept for re-import but never served.
+    (source,) = set(settings.sources_dir.iterdir()) - sources_before
+    assert client.get(f"/files/{source.name}").status_code == 404
+
+    client.put(f"/api/boards/{board['id']}/snapshot", headers=teacher, json={"snapshot": {"a": 1}})
+    again = client.post(f"/api/boards/{board['id']}/reconstruct", headers=teacher).json()
+    assert again["status"] == "ready" and again["snapshot"] is None
+    (pic2,) = [el for el in again["scene"]["elements"] if el["kind"] == "image"]
+    assert not (settings.uploads_dir / pic["file"]).exists()
+    assert (settings.uploads_dir / pic2["file"]).exists()
+
+    # Deleting one page keeps the shared source; deleting the lesson removes everything.
+    client.delete(f"/api/boards/{boards[1]['id']}", headers=teacher)
+    assert source.exists()
+    client.delete(f"/api/lessons/{lesson_id}", headers=teacher)
+    assert not source.exists()
+    assert not (settings.uploads_dir / pic2["file"]).exists()
+
+
+def test_broken_drawio_upload_is_rejected(client, teacher):
+    lesson_id = client.get("/api/lessons", headers=teacher).json()[0]["id"]
+    r = client.post(
+        f"/api/lessons/{lesson_id}/boards",
+        headers=teacher,
+        files=[("files", ("x.drawio", b"<mxfile><diagram>%%%</diagram></mxfile>", "text/xml"))],
+    )
+    assert r.status_code == 422

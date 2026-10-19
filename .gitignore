@@ -33,3 +33,9 @@ api/data/
 Thumbs.db
 .idea/
 .vscode/
+
+# Private material that must never be committed: real student boards and API keys
+board_examples/
+private/
+dusan_api.txt
+*api*.txt

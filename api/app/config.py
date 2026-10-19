@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     def uploads_dir(self) -> Path:
         return self.data_dir / "uploads"
 
+    @property
+    def sources_dir(self) -> Path:
+        """Original uploaded documents; never served over HTTP."""
+        return self.data_dir / "sources"
+
 
 @lru_cache
 def get_settings() -> Settings:

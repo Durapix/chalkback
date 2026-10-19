@@ -62,6 +62,50 @@ def store_upload(data: bytes, content_type: str, filename: str = "") -> list[Sto
     return [_save(img)]
 
 
+def store_embedded_image(data: bytes, subtype: str) -> str | None:
+    """Store an image embedded in an imported board; returns its file name.
+
+    Raster images are re-encoded as PNG (keeping transparency). SVG is refused: served from
+    our own origin it could run scripts, so importers show a placeholder instead.
+    """
+    if "svg" in subtype:
+        return None
+    try:
+        img = Image.open(io.BytesIO(data))
+        img.load()
+    except Exception:
+        return None
+    img = img.convert("RGBA")
+    img.thumbnail((MAX_BOARD_EDGE, MAX_BOARD_EDGE))
+    uploads = get_settings().uploads_dir
+    uploads.mkdir(parents=True, exist_ok=True)
+    name = f"{secrets.token_urlsafe(24)}.png"
+    img.save(uploads / name, format="PNG", optimize=True)
+    return name
+
+
+def store_source_file(data: bytes) -> str:
+    """Keep an uploaded source document (e.g. a draw.io export) so boards can be re-imported.
+
+    Sources live outside the served uploads folder: an HTML export opened from our origin
+    would run its scripts with the app's privileges.
+    """
+    folder = get_settings().sources_dir
+    folder.mkdir(parents=True, exist_ok=True)
+    name = secrets.token_urlsafe(24)
+    (folder / name).write_bytes(data)
+    return name
+
+
+def read_source_file(name: str) -> bytes:
+    return (get_settings().sources_dir / name).read_bytes()
+
+
+def remove_source_files(names: Iterable[str]) -> None:
+    for name in names:
+        (get_settings().sources_dir / name).unlink(missing_ok=True)
+
+
 def image_path(file_name: str) -> Path:
     return get_settings().uploads_dir / file_name
 

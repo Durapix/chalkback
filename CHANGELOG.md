@@ -6,6 +6,24 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Exact draw.io import.** HTML exports, `.drawio` and `.xml` files become boards immediately,
+  with no AI and no cost. Shapes, colors, labels, opacity, tables, groups, pen ink and embedded
+  images are kept, and connectors stay attached to their shapes. Each page is one board, and
+  boards can be re-imported from the stored source.
+- **Board vocabulary for real lessons.** Sticky notes and note grids, code blocks, frames,
+  picture regions, and connectors attached to elements, for both draw.io and AI-reconstructed
+  boards.
+- A fictional draw.io demo lesson ("Linked lists") in the seed data.
+- Running the production Docker stack locally (`deploy/local.env`).
+
+### Changed
+
+- The AI reconstruction prompt and schema target the real board material: Miro screenshots of
+  programming, math, electronics and database lessons, often stitched into collages.
+- Deploy and AI review workflows stay off until `DEPLOY_ENABLED` / `AI_REVIEW_ENABLED` are set.
+
 ## [0.1.0] - 2026-10-16
 
 First release: the full loop from whiteboard photo to student reminder, running end to end in

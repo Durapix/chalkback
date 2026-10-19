@@ -24,15 +24,13 @@ A refusal that still remains is stored on the board or lesson as a readable erro
 3. The response is validated against `Scene` (`api/app/ai/scene.py`) and scaled back to
    full-resolution coordinates.
 
-```python
-class Scene(BaseModel):
-    title: str
-    transcript: str          # plain-text reading of the board, formulas in LaTeX
-    elements: list[Element]  # text | math | geo | arrow | draw
-```
+The model answers with a `VisionScene` (`api/app/ai/vision.py`), whose vocabulary follows how
+the real boards were used: sticky-note grids, block arrows as pointers, attached connectors, code,
+regions kept as pictures, and frames for collages. See [Importing boards](boards.md). Every
+element kind is tagged with an enforced single-value enum, so the model can't invent new kinds.
+Text is transcribed exactly as written, in the original language and script.
 
-Every element kind is tagged with an enforced single-value enum, so the model can't invent new
-kinds. Text is transcribed exactly as written, in the original language, without corrections.
+draw.io boards never reach this step: they are imported exactly and for free.
 
 ## 2. Lesson summary
 

@@ -1,24 +1,43 @@
 from app.ai.claude import structured_call
-from app.ai.scene import Scene
+from app.ai.vision import VisionScene
 from app.config import get_settings
 from app.imaging import model_image
+from app.scene import Scene
 
-SYSTEM = """You digitize photos and screenshots of tutoring whiteboards into a structured \
-scene that will be rebuilt as an editable digital whiteboard, drawn on top of the original \
-image.
+SYSTEM = """You turn photos and screenshots of tutoring whiteboards into a structured scene. \
+The scene is rebuilt as an editable digital whiteboard laid over the original image, and the \
+tutor will keep working on it: moving sticky notes, recoloring them, re-pointing arrows. So \
+capture each thing as the element a tutor would want to grab and move.
 
-Describe every meaningful mark on the board as an element:
-- `text` for handwritten or typed words and short labels;
-- `math` for any formula, equation or expression, as LaTeX;
-- `geo` for boxes, circles and other closed shapes;
-- `arrow` for arrows and pointers;
-- `draw` for everything else: graphs, axes, curves, underlines, sketches (a polyline of \
-points is fine).
+The boards come from lessons on programming and algorithms, mathematics, electronics and \
+databases, mostly in Serbian (Cyrillic or Latin script). Screenshots are often collages of \
+several board areas stitched together.
 
-Coordinates are pixels in the image as you receive it, origin top-left. Place each element \
-where it appears so it lines up with the original. Transcribe text exactly as written, \
-including the original language and any mistakes; do not translate or correct. Ignore UI \
-chrome around the board (toolbars, cursors, window frames)."""
+Elements:
+- `grid`: an aligned field of equal sticky notes (arrays, matrices, indexes, a sieve of \
+numbers). Use one grid instead of many notes whenever notes line up in rows and columns; \
+give every cell its text and color.
+- `note`: a single sticky note (a square with text) that is not part of an aligned field.
+- `shape`: boxes, circles, diamonds and other outlined or filled shapes. Use the \
+`block-arrow-*` shapes for big hollow arrows that point at something (pointers, indexes \
+such as L, D, S).
+- `connector`: a line or arrow between two places. When it starts or ends at an element, \
+set `from_id` / `to_id` to that element's id (a grid cell is '<grid id>:<row>:<col>'). Use \
+route `curved` for smooth curves, `elbow` for lines with right-angle bends, `straight` \
+otherwise; `arrowheads` says which ends have an arrowhead.
+- `text`: words and sentences. `style` is `code` for program code or pseudocode (keep \
+indentation with spaces), `handwriting` for handwriting, `typed` otherwise.
+- `math`: formulas and equations as LaTeX.
+- `stroke`: sketches, underlines, check marks, graphs and axes, as a polyline.
+- `region`: content better kept as a picture of the original: pasted documents and task \
+statements, screenshots of other programs, tables of small print, dense handwritten \
+derivations, complex drawings. Still put the readable text of a region in the transcript.
+- `frame`: each separate part of a collage, with a short title.
+
+Coordinates are pixels in the image as you receive it, origin top-left; place everything \
+where it appears. Transcribe text exactly as written, in its language and script, mistakes \
+included; never translate or correct. Pick the nearest palette color. Ignore app chrome \
+(toolbars, cursors, zoom controls, share buttons)."""
 
 
 async def reconstruct(file_name: str) -> Scene:
@@ -26,7 +45,7 @@ async def reconstruct(file_name: str) -> Scene:
         return mock_scene(file_name)
 
     data, width, height, factor = model_image(file_name)
-    scene = await structured_call(
+    vision = await structured_call(
         system=SYSTEM,
         content=[
             {
@@ -38,99 +57,158 @@ async def reconstruct(file_name: str) -> Scene:
                 "text": f"This board image is {width}x{height} pixels. Reconstruct it.",
             },
         ],
-        output=Scene,
+        output=VisionScene,
         effort=get_settings().reconstruct_effort,
     )
-    return scene.scaled(factor)
+    return vision.to_scene(factor)
 
 
-def mock_scene(file_name: str | None, width: int = 1600, height: int = 900) -> Scene:
-    """Deterministic stand-in used when no API key is configured (dev, tests, demo)."""
+MOCK_W, MOCK_H = 1600, 900
+
+
+def mock_scene(file_name: str | None) -> Scene:
+    """Deterministic stand-in used without an API key (dev, tests, demo).
+
+    It mirrors a real lesson board (binary search over a sticky-note array) so every element
+    kind goes through the same conversion as real AI output.
+    """
+    width = MOCK_W
     if file_name:
-        _, w, h, factor = model_image(file_name)
-        width, height = round(w * factor), round(h * factor)
-    return Scene.model_validate(
+        _, w, _, factor = model_image(file_name)
+        width = round(w * factor)
+    values = list(range(0, 31, 2))
+    side, gap, x0, y0 = 52, 14, 120, 420
+    cell_x = [x0 + i * (side + gap) for i in range(len(values))]
+    elements: list[dict] = [
         {
-            "title": "Quadratic equations",
-            "transcript": "Quadratic equations\nax^2 + bx + c = 0\n"
-            "D = b^2 - 4ac\nx_{1,2} = \\frac{-b \\pm \\sqrt{D}}{2a}\n"
-            "D > 0: two real roots",
-            "elements": [
-                {
-                    "kind": "text",
-                    "x": width * 0.06,
-                    "y": height * 0.06,
-                    "w": width * 0.5,
-                    "text": "Quadratic equations",
-                    "size": "xl",
-                    "color": "black",
-                },
-                {
-                    "kind": "math",
-                    "x": width * 0.08,
-                    "y": height * 0.22,
-                    "w": width * 0.3,
-                    "h": height * 0.08,
-                    "latex": "ax^2 + bx + c = 0",
-                    "color": "blue",
-                },
-                {
-                    "kind": "math",
-                    "x": width * 0.08,
-                    "y": height * 0.38,
-                    "w": width * 0.25,
-                    "h": height * 0.08,
-                    "latex": "D = b^2 - 4ac",
-                    "color": "black",
-                },
-                {
-                    "kind": "geo",
-                    "x": width * 0.06,
-                    "y": height * 0.54,
-                    "w": width * 0.4,
-                    "h": height * 0.16,
-                    "geo": "rectangle",
-                    "color": "red",
-                    "label": "",
-                },
-                {
-                    "kind": "math",
-                    "x": width * 0.08,
-                    "y": height * 0.57,
-                    "w": width * 0.36,
-                    "h": height * 0.1,
-                    "latex": "x_{1,2} = \\frac{-b \\pm \\sqrt{D}}{2a}",
-                    "color": "black",
-                },
-                {
-                    "kind": "arrow",
-                    "x1": width * 0.48,
-                    "y1": height * 0.42,
-                    "x2": width * 0.6,
-                    "y2": height * 0.42,
-                    "color": "green",
-                    "label": "",
-                },
-                {
-                    "kind": "text",
-                    "x": width * 0.62,
-                    "y": height * 0.39,
-                    "w": width * 0.3,
-                    "text": "D > 0: two real roots",
-                    "size": "m",
-                    "color": "green",
-                },
-                {
-                    "kind": "draw",
-                    "color": "violet",
-                    "points": [
-                        {
-                            "x": width * (0.6 + i * 0.03),
-                            "y": height * (0.85 - 0.6 * ((i - 5) / 5) ** 2 * 0.5),
-                        }
-                        for i in range(11)
-                    ],
-                },
-            ],
+            "kind": "frame",
+            "id": "f1",
+            "x": 60,
+            "y": 40,
+            "w": 1480,
+            "h": 820,
+            "title": "Binary search",
+        },
+        {
+            "kind": "text",
+            "id": "t1",
+            "x": 120,
+            "y": 90,
+            "w": 620,
+            "style": "typed",
+            "size": "l",
+            "color": "black",
+            "text": "search(array, 0, 15, 10)",
+        },
+        {
+            "kind": "text",
+            "id": "c1",
+            "x": 980,
+            "y": 90,
+            "w": 520,
+            "style": "code",
+            "size": "m",
+            "color": "black",
+            "text": "L = 0\nD = 15\nS = (L + D) / 2\nif array[S] == x: return S\n"
+            "if x < array[S]:\n    search(array, L, S - 1)\nelse:\n"
+            "    search(array, S + 1, D)",
+        },
+        {
+            "kind": "grid",
+            "id": "g1",
+            "x": x0,
+            "y": y0,
+            "rows": 1,
+            "cols": len(values),
+            "side": side,
+            "gap_x": gap,
+            "gap_y": 0,
+            "cells": [{"text": str(v), "color": "yellow"} for v in values],
+        },
+        {
+            "kind": "shape",
+            "id": "L",
+            "x": cell_x[0] - 4,
+            "y": y0 + 90,
+            "w": 60,
+            "h": 130,
+            "shape": "block-arrow-up",
+            "filled": False,
+            "color": "grey",
+            "label": "L",
+        },
+        {
+            "kind": "shape",
+            "id": "D",
+            "x": cell_x[-1] - 4,
+            "y": y0 + 90,
+            "w": 60,
+            "h": 130,
+            "shape": "block-arrow-up",
+            "filled": False,
+            "color": "grey",
+            "label": "D",
+        },
+        {
+            "kind": "shape",
+            "id": "S",
+            "x": cell_x[7] - 14,
+            "y": y0 - 190,
+            "w": 80,
+            "h": 150,
+            "shape": "block-arrow-down",
+            "filled": False,
+            "color": "grey",
+            "label": "S",
+        },
+        {
+            "kind": "note",
+            "id": "n1",
+            "x": cell_x[7],
+            "y": y0 + 190,
+            "side": side,
+            "text": "10",
+            "color": "orange",
+        },
+        {
+            "kind": "connector",
+            "id": "k1",
+            "from_id": "n1",
+            "to_id": "g1:0:5",
+            "x1": cell_x[7] + side / 2,
+            "y1": y0 + 190,
+            "x2": cell_x[5] + side / 2,
+            "y2": y0 + side,
+            "route": "curved",
+            "arrowheads": "none",
+            "color": "violet",
+            "label": "",
+        },
+        {
+            "kind": "stroke",
+            "id": "s1",
+            "color": "green",
+            "points": [{"x": 820, "y": 150}, {"x": 845, "y": 185}, {"x": 900, "y": 95}],
+        },
+        {
+            "kind": "math",
+            "id": "m1",
+            "x": 980,
+            "y": 330,
+            "w": 300,
+            "h": 50,
+            "latex": "S = \\left\\lfloor \\frac{L + D}{2} \\right\\rfloor",
+            "color": "blue",
+        },
+    ]
+    vision = VisionScene.model_validate(
+        {
+            "title": "Binary search",
+            "transcript": "search(array, 0, 15, 10)\nL = 0, D = 15, S = (L + D) / 2\n"
+            "Array: " + ", ".join(map(str, values)) + "\nLooking for 10.",
+            "elements": elements,
         }
     )
+    scene = vision.to_scene(width / MOCK_W)
+    scene.source = "mock"
+    return scene
