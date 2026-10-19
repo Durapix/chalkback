@@ -41,6 +41,17 @@ not much to recap from it, describe only what is actually there, and note that i
 probably one part of a larger example. Never invent a purpose to fill the space; a short \
 recap is better than a confident wrong one."""
 
+# Languages written in more than one script: the script recaps always use.
+SCRIPTS = {
+    "serbian": "Serbian, written only in Cyrillic script (ћирилица), even where the boards "
+    "use Latin script. Keep code, variable names, SQL, formulas and quoted labels exactly "
+    "as written on the board.",
+}
+
+
+def language_instruction(language: str) -> str:
+    return SCRIPTS.get(language.strip().lower(), language)
+
 
 def lesson_material(lesson: Lesson) -> str:
     parts = [f"Lesson: {lesson.title}", f"Subject: {lesson.subject}"]
@@ -64,7 +75,7 @@ async def summarize(lesson: Lesson, student_name: str, language: str) -> LessonS
                 "type": "text",
                 "text": f"<material>\n{material}\n</material>\n\n"
                 f"Student's first name: {student_name}\n"
-                f"Write the summary in: {language}",
+                f"Write the summary in: {language_instruction(language)}",
             }
         ],
         output=LessonSummary,
