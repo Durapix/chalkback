@@ -52,6 +52,7 @@ async def summarize_lesson(lesson_id: int) -> None:
             lesson.summary_status = JobStatus.failed
             lesson.summary_error = "Unexpected error while summarizing"
         else:
-            lesson.summary = summary.model_dump()
+            # The language it was written in, for the section titles around it.
+            lesson.summary = {**summary.model_dump(), "language": student.language}
             lesson.summary_status = JobStatus.ready
         db.commit()

@@ -30,6 +30,7 @@ class UserOut(ORM):
     email: str
     name: str
     role: Role
+    language: str
 
 
 class StudentIn(BaseModel):

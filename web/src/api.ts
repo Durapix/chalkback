@@ -6,10 +6,10 @@ export interface User {
   email: string
   name: string
   role: Role
+  language: string
 }
 
 export interface Student extends User {
-  language: string
   telegram_chat_id: string | null
   remind_by_email: boolean
   remind_by_telegram: boolean
@@ -159,6 +159,8 @@ export interface LessonSummary {
   exercises: string[]
   recap_message: string
   review_suggestions: string[]
+  // The language it was written in (missing on older recaps).
+  language?: string
 }
 
 export interface Lesson {

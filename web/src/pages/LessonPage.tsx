@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api, type Board, type Lesson } from '../api'
 import { useAuth } from '../auth'
 import { StatusChip, Tex, formatDate, isBusy } from '../ui'
+import { recapLabels } from '../recapLabels'
 
 const POLL_MS = 2000
 // tldraw is large; load it only when a board is actually opened.
@@ -160,6 +161,7 @@ function SummaryPanel({
 }) {
   const [error, setError] = useState<string | null>(null)
   const s = lesson.summary
+  const t = recapLabels(s?.language ?? lesson.student.language)
   const generate = async () => {
     setError(null)
     try {
@@ -186,10 +188,10 @@ function SummaryPanel({
               ))}
             </div>
           )}
-          <Section title="Key points" items={s.key_points} />
+          <Section title={t.keyPoints} items={s.key_points} />
           {s.formulas.length > 0 && (
             <>
-              <h4>Formulas</h4>
+              <h4>{t.formulas}</h4>
               <div className="cb-formulas">
                 {s.formulas.map((f) => (
                   <Tex key={f} latex={f} block />
@@ -197,8 +199,8 @@ function SummaryPanel({
               </div>
             </>
           )}
-          <Section title="Exercises" items={s.exercises} />
-          <Section title="Before next lesson" items={s.review_suggestions} />
+          <Section title={t.exercises} items={s.exercises} />
+          <Section title={t.beforeNextLesson} items={s.review_suggestions} />
         </>
       ) : (
         <p className="cb-muted">

@@ -236,3 +236,21 @@ def test_broken_drawio_upload_is_rejected(client, teacher):
         files=[("files", ("x.drawio", b"<mxfile><diagram>%%%</diagram></mxfile>", "text/xml"))],
     )
     assert r.status_code == 422
+
+
+def test_reminder_section_titles_follow_the_recap_language():
+    from app.models import Lesson, User
+
+    summary = {
+        "headline": "H",
+        "recap_message": "R",
+        "key_points": ["k"],
+        "review_suggestions": ["r"],
+    }
+    student = User(name="S", language="Serbian")
+    older = Lesson(id=1, title="T", summary=summary)  # stored before recaps recorded a language
+    text = notify.render_text(student, older)
+    assert "Најважније:" in text and "Пре следећег часа:" in text and "Key points" not in text
+    assert "Отвори таблу" in notify.render_html(student, older)
+    english = Lesson(id=2, title="T", summary={**summary, "language": "English"})
+    assert "Key points:" in notify.render_text(student, english)
