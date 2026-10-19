@@ -92,7 +92,7 @@ export function LessonPage() {
               <h3>No boards yet</h3>
               <p className="cb-muted">
                 {isTeacher
-                  ? 'Upload screenshots or a PDF export of the whiteboard from this lesson. Claude will rebuild each one as an editable board.'
+                  ? 'Upload the boards from this lesson. draw.io files (HTML export, .drawio, .xml) are imported exactly; screenshots, photos and PDFs are rebuilt by Claude as editable boards.'
                   : 'Your tutor has not added boards for this lesson yet.'}
               </p>
             </div>
@@ -259,7 +259,7 @@ function UploadButton({ lessonId, onUploaded }: { lessonId: number; onUploaded: 
       <input
         ref={input}
         type="file"
-        accept="image/png,image/jpeg,image/webp,application/pdf"
+        accept="image/png,image/jpeg,image/webp,application/pdf,.html,.htm,.drawio,.xml"
         multiple
         hidden
         onChange={(e) => upload(e.target.files)}
