@@ -283,8 +283,14 @@ def fit_label_scale(w: float, h: float, text: str) -> float:
     return round(max(0.05, 0.95 * min(by_width, by_height, 4.0)), 3)
 
 
-def reading_order_text(scene: Scene) -> str:
-    """Plain-text reading of a scene (top-to-bottom, left-to-right) for summaries."""
+def reading_order_text(
+    scene: Scene, skip_ids: set[str] = frozenset(), skip_texts: set[str] = frozenset()
+) -> str:
+    """Plain-text reading of a scene (top-to-bottom, left-to-right) for summaries.
+
+    Elements in `skip_ids` and texts equal to one of `skip_texts` are left out (e.g. parts
+    already described as a flowchart).
+    """
     labelled: list[tuple[float, float, str]] = []
     names = {}
     for el in scene.elements:
@@ -297,10 +303,12 @@ def reading_order_text(scene: Scene) -> str:
             text = f"${el.latex}$"
         elif isinstance(el, FrameElement):
             text = f"[{el.name}]" if el.name else ""
-        if text.strip():
+        if not text.strip():
+            continue
+        if el.id:
+            names[el.id] = " ".join(text.split())[:40]
+        if not (el.id in skip_ids or " ".join(text.split()) in skip_texts):
             labelled.append((el.y, el.x, text.strip()))
-            if el.id:
-                names[el.id] = text.strip().splitlines()[0][:40]
     # Group into rows of roughly the same height so side-by-side items read left to right.
     labelled.sort()
     lines, row, row_y = [], [], None
@@ -316,7 +324,11 @@ def reading_order_text(scene: Scene) -> str:
     links = [
         f"{names[el.from_id]} -> {names[el.to_id]}" + (f" ({el.label})" if el.label else "")
         for el in scene.elements
-        if isinstance(el, ConnectorElement) and el.from_id in names and el.to_id in names
+        if isinstance(el, ConnectorElement)
+        and el.from_id in names
+        and el.to_id in names
+        # Arrows inside an already described flowchart are not repeated.
+        and not (el.from_id in skip_ids and el.to_id in skip_ids)
     ]
     if links:
         lines += ["", "Connections:", *links]

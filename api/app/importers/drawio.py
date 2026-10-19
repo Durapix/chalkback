@@ -22,6 +22,7 @@ import xml.etree.ElementTree as ET
 import zlib
 from dataclasses import dataclass, field
 
+from app.flowchart import board_reading
 from app.importers.colors import fill_style, to_palette
 from app.scene import (
     Anchor,
@@ -34,7 +35,6 @@ from app.scene import (
     Point,
     Scene,
     TextElement,
-    reading_order_text,
 )
 
 MARGIN = 40
@@ -625,7 +625,7 @@ def _import(data: bytes, written: list[str]) -> list[ImportedPage]:
             min_x, min_y, max_x, max_y = scene.bounds()
             scene = scene.translated(MARGIN - min_x, MARGIN - min_y)
             scene.title = _title(name, scene)
-            scene.transcript = reading_order_text(scene)
+            scene.transcript = board_reading(scene)
             pages.append(
                 ImportedPage(
                     name=name,
