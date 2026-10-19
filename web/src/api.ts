@@ -91,6 +91,7 @@ export type SceneElement = ElementBase &
         align: Align
         valign: Align
         scale: number
+        flip_y: boolean
       }
     | { kind: 'note'; x: number; y: number; w: number; text: string; color: Color; font: Font }
     | { kind: 'code'; x: number; y: number; w: number; text: string; color: Color; scale: number }
@@ -120,6 +121,7 @@ export type SceneElement = ElementBase &
         freehand: boolean
         closed: boolean
         filled: boolean
+        smooth: boolean
         size: Size
       }
     | {

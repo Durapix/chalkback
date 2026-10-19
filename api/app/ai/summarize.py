@@ -27,7 +27,19 @@ previous one as its step), say so: that progression is usually the point of the 
 - Faded parts and notes that are not connected to a chart (task lists, legends such as \
 "Нађи ми десну цифру = broj%10") are context that explains the vocabulary.
 - An unfinished chart (arrows that stop, unanswered "?????") is an open question from the \
-lesson; mention it as something to think about, not as a mistake."""
+lesson; mention it as something to think about, not as a mistake.
+- An "Entity-relationship diagram" uses the same symbols but is not an algorithm: its \
+rectangles are entities (things stored in a database) and its diamonds are relationships \
+between them. Explain what the data model says, and how example tables of keys fit it.
+- "(red)" and "(green)" after table cells mark rows that were ruled out or kept, usually \
+step by step during the lesson (for example, which rows a query's condition keeps).
+
+Be honest when a board says little. Boards were used live, and parts of the explanation \
+happened by moving things around (for example, moving arrows over boxes) and are not visible \
+afterwards. If a board is very simple, fragmentary or ambiguous, say plainly that there is \
+not much to recap from it, describe only what is actually there, and note that it was \
+probably one part of a larger example. Never invent a purpose to fill the space; a short \
+recap is better than a confident wrong one."""
 
 
 def lesson_material(lesson: Lesson) -> str:

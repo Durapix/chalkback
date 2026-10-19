@@ -35,6 +35,7 @@ from app.scene import (
     Point,
     Scene,
     TextElement,
+    fit_wrapped_label_scale,  # noqa: I001
 )
 
 MARGIN = 40
@@ -199,6 +200,8 @@ class _Page:
         self.cells = cells
         self.elements: list = []
         self.boxes: dict[str, tuple[float, float, float, float]] = {}
+        self.round: set[str] = set()  # ellipse-like shapes (for where wires touch them)
+        self.turned: set[str] = set()  # rotated shapes: lines end at their outline, unbound
         self.rendered: set[str] = set()
         self.images: list[str] = []
 
@@ -250,8 +253,13 @@ class _Page:
         if shape == "image" or "image" in st:
             self.image(cell, st, x, y, w, h)
             return
-        if "text" in st or (
-            st.get("strokeColor") == "none" and st.get("fillColor") in (None, "none")
+        boxed_text = "text" in st and (
+            st.get("fillColor") not in (None, "none")
+            or st.get("strokeColor") not in (None, "none", "default")
+        )
+        if not boxed_text and (
+            "text" in st
+            or (st.get("strokeColor") == "none" and st.get("fillColor") in (None, "none"))
         ):
             if cell.label:
                 align = _align(st.get("align", "center"))
@@ -280,6 +288,13 @@ class _Page:
             return
 
         geo, extra_rotation = _geo_kind(st)
+        if geo in ("ellipse", "diamond"):
+            self.round.add(cell.id)
+        if extra_rotation or rotation:
+            self.turned.add(cell.id)
+        if boxed_text:
+            pad = float(st.get("spacing", 2) or 0) + float(st.get("spacingLeft", 0) or 0)
+            st = {**st, "align": st.get("align", "left") if pad else st.get("align", "center")}
         box = (x, y, w, h)
         if extra_rotation % 180 == 90:
             # A shape turned by a quarter fills the original box only with width and height
@@ -288,8 +303,13 @@ class _Page:
             w, h = h, w
             x, y = cx - w / 2, cy - h / 2
         is_lane = "swimlane" in st
+        header = float(st.get("startSize", 26) or 26) if is_lane else 0
         stroke = st.get("strokeColor")
         fill_value = st.get("swimlaneFillColor", "none") if is_lane else st.get("fillColor")
+        label = "" if extra_rotation or is_lane else cell.label
+        if label:
+            # Keep shapes their size: tldraw would grow a shape whose label does not fit.
+            scale = min(scale, fit_wrapped_label_scale(w, h, label, scale))
         color = (
             to_palette(stroke)
             if stroke not in (None, "none", "default")
@@ -310,8 +330,9 @@ class _Page:
                 color=color,
                 fill=fill_style(fill_value, default_white=not is_lane),
                 dash="dashed" if st.get("dashed") == "1" else "solid",
-                # draw.io turns only the outline of e.g. a triangle, never its label.
-                label="" if extra_rotation else cell.label,
+                # draw.io turns only the outline of e.g. a triangle, never its label;
+                # a table's title goes on its header below.
+                label=label,
                 label_color=to_palette(st.get("fontColor")) if st.get("fontColor") else None,
                 font="sans",
                 size="s",
@@ -319,6 +340,8 @@ class _Page:
                 valign="start" if is_lane else _valign(st.get("verticalAlign", "middle")),
                 scale=scale,
                 rotation=rotation + extra_rotation,
+                # draw.io's west-facing trapezoid is upside down (wide at the top).
+                flip_y=geo == "trapezoid" and st.get("direction") in ("west", "south"),
             ),
         )
         if extra_rotation and cell.label:
@@ -341,14 +364,28 @@ class _Page:
                 )
             )
         if is_lane and st.get("horizontal") != "0":
-            line_y = y + float(st.get("startSize", 26) or 26)
+            # The table's header: its own fill (draw.io's fillColor) and title.
+            head_scale = (
+                min(scale, fit_wrapped_label_scale(w, header, cell.label, scale))
+                if cell.label
+                else scale
+            )
             self.elements.append(
-                DrawElement(
-                    kind="draw",
+                GeoElement(
+                    kind="geo",
                     id=f"{cell.id}~header",
+                    x=x,
+                    y=y,
+                    w=max(w, 1),
+                    h=max(header, 1),
                     color=color,
+                    fill=fill_style(st.get("fillColor"), default_white=True),
+                    label=cell.label,
+                    label_color=to_palette(st.get("fontColor")) if st.get("fontColor") else None,
+                    font="sans",
+                    size="s",
+                    scale=head_scale,
                     opacity=_opacity(st),
-                    points=[Point(x=x, y=line_y), Point(x=x + w, y=line_y)],
                 )
             )
 
@@ -429,6 +466,68 @@ class _Page:
 
     # ----------------------------------------------------------------- edges
 
+    def touch_point(self, cid: str, toward: Point) -> Point:
+        """Where a line from `toward` meets the outline of shape `cid` (aimed at its center)."""
+        bx, by, bw, bh = self.boxes[cid]
+        cx, cy = bx + bw / 2, by + bh / 2
+        dx, dy = toward.x - cx, toward.y - cy
+        if dx == 0 and dy == 0:
+            return Point(x=cx, y=cy)
+        hw, hh = max(bw / 2, 0.01), max(bh / 2, 0.01)
+        if cid in self.round:
+            t = 1 / math.sqrt((dx / hw) ** 2 + (dy / hh) ** 2)
+        else:
+            t = min(hw / abs(dx) if dx else math.inf, hh / abs(dy) if dy else math.inf)
+        return Point(x=cx + dx * t, y=cy + dy * t)
+
+    def polyline(self, cell, st, src, tgt, start, start_anchor, end, end_anchor, waypoints):
+        """An edge routed through waypoints (e.g. circuit wires): straight segments, with an
+        arrow on the last leg when the edge has an arrowhead."""
+        if src and start_anchor is None:
+            start = self.touch_point(src, waypoints[0])
+        if tgt and end_anchor is None:
+            end = self.touch_point(tgt, waypoints[-1])
+        points = [start, *waypoints, end]
+        if st.get("edgeStyle") in ("orthogonalEdgeStyle", "elbowEdgeStyle"):
+            squared = [points[0]]
+            for p in points[1:]:
+                q = squared[-1]
+                if q.x != p.x and q.y != p.y:
+                    squared.append(Point(x=p.x, y=q.y))
+                squared.append(p)
+            points = squared
+        color = to_palette(st.get("strokeColor"))
+        end_head = _arrowhead(st.get("endArrow", "classic"))
+        line_points = points if end_head == "none" else points[:-1]
+        if len(line_points) >= 2:
+            self.elements.append(
+                DrawElement(
+                    kind="draw",
+                    id=f"{cell.id}~path",
+                    points=line_points,
+                    color=color,
+                    smooth=False,
+                    opacity=_opacity(st),
+                )
+            )
+        if end_head != "none":
+            a, b = points[-2], points[-1]
+            self.elements.append(
+                ConnectorElement(
+                    kind="connector",
+                    id=cell.id,
+                    x1=a.x,
+                    y1=a.y,
+                    x2=b.x,
+                    y2=b.y,
+                    to_id=tgt,
+                    to_anchor=end_anchor,
+                    end_head=end_head,
+                    color=color,
+                    opacity=_opacity(st),
+                )
+            )
+
     def edge(self, cell: _Cell) -> None:
         st = cell.style
         geo = cell.geo
@@ -450,6 +549,19 @@ class _Page:
         end, end_anchor = terminal(tgt, "targetPoint", "entryX", "entryY")
         if not src and not tgt and start == end:
             return  # degenerate edge with no geometry
+        # tldraw attaches arrows to rotated shapes poorly; end such lines at the outline.
+        if tgt in self.turned:
+            end, end_anchor, tgt = self.touch_point(tgt, start), None, ""
+        if src in self.turned:
+            start, start_anchor, src = self.touch_point(src, end), None, ""
+        array = geo.find("Array[@as='points']") if geo is not None else None
+        waypoints = [
+            Point(x=px + _num(p, "x"), y=py + _num(p, "y"))
+            for p in (array if array is not None else [])
+        ]
+        if waypoints:
+            self.polyline(cell, st, src, tgt, start, start_anchor, end, end_anchor, waypoints)
+            return
 
         labels = [cell.label] + [
             self.cells[c].label
@@ -462,6 +574,9 @@ class _Page:
             "entityRelationEdgeStyle",
         ):
             route = "elbow"
+            if src and tgt and _aligned(self.boxes[src], self.boxes[tgt]):
+                # No bend needed; a straight arrow avoids tldraw re-routing it oddly.
+                route = "straight"
         elif st.get("curved") == "1":
             route = "curved"
         else:
@@ -488,6 +603,13 @@ class _Page:
                 opacity=_opacity(st),
             )
         )
+
+
+def _aligned(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> bool:
+    """Shapes stacked in a column or sitting in a row (centers within 2 px)."""
+    ax, ay = a[0] + a[2] / 2, a[1] + a[3] / 2
+    bx, by = b[0] + b[2] / 2, b[1] + b[3] / 2
+    return abs(ax - bx) <= 2 or abs(ay - by) <= 2
 
 
 def _opacity(st: dict[str, str]) -> float:

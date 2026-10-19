@@ -61,7 +61,7 @@ class User(Base):
 
     # Student-only fields
     teacher_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True)
-    language: Mapped[str] = mapped_column(String(32), default="English")
+    language: Mapped[str] = mapped_column(String(32), default="Serbian")
     telegram_chat_id: Mapped[str | None] = mapped_column(String(64))
     remind_by_email: Mapped[bool] = mapped_column(default=True)
     remind_by_telegram: Mapped[bool] = mapped_column(default=False)

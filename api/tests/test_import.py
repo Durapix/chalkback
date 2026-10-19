@@ -35,7 +35,8 @@ def test_connectors_stay_attached_to_their_shapes(pages):
     scene = pages[0].scene
     nxt = by_id(scene, "e0")
     assert isinstance(nxt, ConnectorElement)
-    assert (nxt.from_id, nxt.to_id, nxt.route) == ("p0", "d1", "elbow")
+    # An angled (orthogonal) draw.io edge between shapes in one row needs no bend.
+    assert (nxt.from_id, nxt.to_id, nxt.route) == ("p0", "d1", "straight")
     head = by_id(scene, "eh")
     assert head.label == "first node"
     loose = by_id(scene, "loose")
@@ -67,9 +68,10 @@ def test_styles_pen_strokes_and_images(pages):
     assert pages[0].files == [pic.file]
     tri = by_id(scene, "tri")  # draw.io triangles point right: rotated, box swapped
     assert (tri.rotation, tri.w, tri.h) == (90, 60, 40)
-    # Table containers get the line under their title row.
-    header = by_id(scene, "lane~header")
-    assert [p.y for p in header.points] == [by_id(scene, "lane").y + 26] * 2
+    # Tables get a header with draw.io's header fill and the title; the body has no label.
+    header, lane = by_id(scene, "lane~header"), by_id(scene, "lane")
+    assert (header.y, header.h, header.label, header.fill) == (lane.y, 26, "Student", "solid")
+    assert lane.label == ""
 
 
 def test_transcript_reads_labels_and_connections(pages):
@@ -136,3 +138,62 @@ def test_vision_scene_conversion():
     assert region.crop.model_dump() == {"x": 2, "y": 4, "w": 6, "h": 8}
     conn = by_id(scene, "c")
     assert (conn.to_id, conn.end_head, conn.route) == ("g:1:1", "none", "curved")
+
+
+def _model(cells: str) -> bytes:
+    return (
+        '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>'
+        + cells
+        + "</root></mxGraphModel>"
+    ).encode()
+
+
+def test_colored_table_cells_keep_their_fill_and_labels_fit():
+    (page,) = import_drawio(
+        _model(
+            '<mxCell id="t" value="Students" style="swimlane;startSize=30;fillColor=#f8cecc;"'
+            ' vertex="1" parent="1"><mxGeometry width="140" height="90" as="geometry"/></mxCell>'
+            '<mxCell id="r" value="Item 2" style="text;fillColor=#d5e8d4;strokeColor=#82b366;'
+            'spacingLeft=4;" vertex="1" parent="t">'
+            '<mxGeometry y="30" width="140" height="30" as="geometry"/></mxCell>'
+            '<mxCell id="b" value="Shift all digits to the left" style="whiteSpace=wrap;"'
+            ' vertex="1" parent="1"><mxGeometry y="200" width="120" height="40"'
+            ' as="geometry"/></mxCell>'
+        )
+    )
+    scene = page.scene
+    row = by_id(scene, "r")
+    assert isinstance(row, GeoElement)
+    assert (row.color, row.fill, row.label, row.align) == (
+        "green",
+        "solid",
+        "Item 2",
+        "start",
+    )
+    header = by_id(scene, "t~header")
+    assert (header.color, header.fill, header.label) == ("light-red", "solid", "Students")
+    assert "Item 2 (green)" in scene.transcript
+    box = by_id(scene, "b")  # two lines must fit 40 px, so the label is scaled down
+    assert box.scale < 12 / 18
+
+
+def test_waypoint_wires_are_polylines_and_flipped_trapezoids():
+    (page,) = import_drawio(
+        _model(
+            '<mxCell id="a" value="R1" style="" vertex="1" parent="1">'
+            '<mxGeometry x="100" y="0" width="100" height="40" as="geometry"/></mxCell>'
+            '<mxCell id="c" value="R2" style="" vertex="1" parent="1">'
+            '<mxGeometry x="100" y="100" width="100" height="40" as="geometry"/></mxCell>'
+            '<mxCell id="w" style="endArrow=none;" edge="1" parent="1" source="a" target="c">'
+            '<mxGeometry relative="1" as="geometry"><Array as="points">'
+            '<mxPoint x="40" y="70"/></Array></mxGeometry></mxCell>'
+            '<mxCell id="f" value="FROM" style="shape=trapezoid;direction=west;" vertex="1"'
+            ' parent="1"><mxGeometry x="300" width="120" height="40" as="geometry"/></mxCell>'
+        )
+    )
+    scene = page.scene
+    wire = by_id(scene, "w~path")
+    assert isinstance(wire, DrawElement) and not wire.smooth
+    # R1's outline -> waypoint -> R2's outline
+    assert len(wire.points) == 3 and wire.points[1].x == by_id(scene, "a").x - 60
+    assert by_id(scene, "f").flip_y

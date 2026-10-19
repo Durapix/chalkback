@@ -36,7 +36,7 @@ class StudentIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     email: EmailStr
     password: str = Field(min_length=8)
-    language: str = "English"
+    language: str = "Serbian"
     telegram_chat_id: str | None = None
     remind_by_email: bool = True
     remind_by_telegram: bool = False

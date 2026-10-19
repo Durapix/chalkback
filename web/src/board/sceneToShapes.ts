@@ -116,6 +116,7 @@ function elementToShape(el: SceneElement, ctx: Ctx): TLShapePartial | null {
           size: el.size,
           align: el.align,
           verticalAlign: el.valign,
+          flipY: !!el.flip_y,
           scale: el.scale || 1,
           richText: toRichText(el.label),
         },
@@ -209,7 +210,13 @@ function elementToShape(el: SceneElement, ctx: Ctx): TLShapePartial | null {
         type: 'line',
         x: origin.x,
         y: origin.y,
-        props: { points, color: el.color, size: el.size, spline: rel.length > 3 ? 'cubic' : 'line' },
+        props: {
+          points,
+          color: el.color,
+          size: el.size,
+          // Wires and polylines keep straight segments; sketched curves are smoothed.
+          spline: el.smooth !== false && rel.length > 3 ? 'cubic' : 'line',
+        },
       }
     }
     case 'image': {

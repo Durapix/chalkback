@@ -508,11 +508,104 @@ def _title_candidates(g: _Graph, chart_nodes: list[Node]) -> list[tuple[float, N
     return out
 
 
+@dataclass
+class ErDiagram:
+    """An entity-relationship diagram: entities (rectangles) linked through relationships
+    (diamonds with a verb phrase). Drawn with the same symbols as flowcharts but without
+    start, end or input/output."""
+
+    entities: list[str]
+    relations: list[str]
+    node_ids: set[str]
+
+    def text(self) -> str:
+        return "\n".join(
+            [
+                "Entity-relationship diagram (not an algorithm):",
+                f"  Entities: {'; '.join(self.entities)}",
+                "  Relationships:",
+                *(f"    {r}" for r in self.relations),
+            ]
+        )
+
+
+def _components(g: _Graph) -> list[set[str]]:
+    neighbours: dict[str, set[str]] = {}
+    for e in g.edges:
+        neighbours.setdefault(e.src, set()).add(e.dst)
+        neighbours.setdefault(e.dst, set()).add(e.src)
+    seen: set[str] = set()
+    out = []
+    for start in neighbours:
+        if start in seen:
+            continue
+        comp, queue = set(), deque([start])
+        while queue:
+            cur = queue.popleft()
+            if cur in comp:
+                continue
+            comp.add(cur)
+            queue.extend(neighbours.get(cur, ()))
+        seen |= comp
+        out.append(comp)
+    return out
+
+
+def _er_diagrams(g: _Graph) -> list[ErDiagram]:
+    diagrams = []
+    entity_kinds = ("process", "box")
+    for comp in _components(g):
+        kinds = {g.nodes[n].kind for n in comp}
+        if kinds & {"start", "end", "io"}:
+            continue
+        diamonds = [g.nodes[n] for n in comp if g.nodes[n].kind == "decision"]
+        if not diamonds:
+            continue
+
+        def linked(d: Node) -> list[Node]:
+            ids = {e.src for e in g.ins(d.id)} | {e.dst for e in g.outs(d.id)}
+            return [g.nodes[i] for i in ids if g.nodes[i].kind in entity_kinds]
+
+        if not all(len(linked(d)) >= 2 for d in diamonds):
+            continue
+        relations = []
+        for d in sorted(diamonds, key=lambda n: (n.y, n.x)):
+            sources = [g.nodes[e.src].label for e in g.ins(d.id)]
+            targets = [g.nodes[e.dst].label for e in g.outs(d.id)]
+            if sources and targets:
+                relations += [f"{a} —[{d.label}]→ {b}" for a in sources for b in targets]
+            else:
+                ends = sources + targets
+                relations += [
+                    f"{a} —[{d.label}]— {b}" for a, b in zip(ends, ends[1:], strict=False)
+                ]
+        relations += [
+            f"{g.nodes[e.src].label} → {g.nodes[e.dst].label}"
+            for e in g.edges
+            if e.src in comp
+            and g.nodes[e.src].kind in entity_kinds
+            and g.nodes[e.dst].kind in entity_kinds
+        ]
+        entities = [
+            g.nodes[n].label
+            for n in sorted(comp, key=lambda n: (g.nodes[n].y, g.nodes[n].x))
+            if g.nodes[n].kind in entity_kinds and g.nodes[n].label
+        ]
+        diagrams.append(ErDiagram(entities, relations, set(comp)))
+    return diagrams
+
+
+def analyze_er(scene: Scene) -> list[ErDiagram]:
+    """Entity-relationship diagrams on a board."""
+    return _er_diagrams(_Graph(scene))
+
+
 def analyze(scene: Scene) -> list[Chart]:
     """All flowcharts on a board, each as structured pseudocode."""
     g = _Graph(scene)
     charts: list[Chart] = []
-    used: set[str] = set()
+    # Entity-relationship diagrams use the same symbols; they are not algorithms.
+    used: set[str] = set().union(*(d.node_ids for d in _er_diagrams(g)))
     starts = sorted(
         (n for n in g.nodes.values() if n.kind == "start"), key=lambda n: (n.y // 400, n.x)
     )
@@ -577,14 +670,16 @@ def analyze(scene: Scene) -> list[Chart]:
 
 
 def board_reading(scene: Scene) -> str:
-    """Transcript: flowcharts as algorithms first, then everything else on the board."""
+    """Transcript: flowcharts as algorithms and ER diagrams as relationships first, then
+    everything else on the board."""
     charts = analyze(scene)
-    if not charts:
+    diagrams = analyze_er(scene)
+    if not charts and not diagrams:
         return reading_order_text(scene)
-    used = set().union(*(c.node_ids for c in charts))
+    used = set().union(*(c.node_ids for c in charts), *(d.node_ids for d in diagrams))
     titles = {c.title for c in charts if c.title}
-    parts = [c.text() for c in charts]
+    parts = [c.text() for c in charts] + [d.text() for d in diagrams]
     rest = reading_order_text(scene, skip_ids=used, skip_texts=titles)
     if rest.strip():
-        parts.append("Other notes on the board (not part of a flowchart):\n" + rest)
+        parts.append("Other notes on the board:\n" + rest)
     return "\n\n".join(parts)
