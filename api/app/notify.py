@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models import JobStatus, Lesson, Reminder, User, utcnow
+from app.recap_labels import RecapLabels, recap_labels
 
 log = logging.getLogger(__name__)
 
@@ -20,21 +21,26 @@ class DeliveryError(RuntimeError):
     pass
 
 
+def labels_for(student: User, lesson: Lesson) -> RecapLabels:
+    """Labels in the language the recap was written in (older recaps: the student's)."""
+    return recap_labels((lesson.summary or {}).get("language") or student.language)
+
+
 def render_text(student: User, lesson: Lesson) -> str:
-    s = lesson.summary or {}
-    lines = [s.get("recap_message", f"Last time we covered: {lesson.title}."), ""]
+    s, t = lesson.summary or {}, labels_for(student, lesson)
+    lines = [s.get("recap_message", t.fallback.format(title=lesson.title)), ""]
     if s.get("key_points"):
-        lines.append("Key points:")
+        lines.append(f"{t.key_points}:")
         lines += [f"• {p}" for p in s["key_points"]]
     if s.get("review_suggestions"):
-        lines += ["", "Before next lesson:"]
+        lines += ["", f"{t.before_next_lesson}:"]
         lines += [f"• {p}" for p in s["review_suggestions"]]
-    lines += ["", f"Open the board: {get_settings().app_base_url}/lessons/{lesson.id}"]
+    lines += ["", f"{t.open_board}: {get_settings().app_base_url}/lessons/{lesson.id}"]
     return "\n".join(lines)
 
 
 def render_html(student: User, lesson: Lesson) -> str:
-    s = lesson.summary or {}
+    s, t = lesson.summary or {}, labels_for(student, lesson)
     e = html.escape
 
     def items(key: str) -> str:
@@ -44,9 +50,9 @@ def render_html(student: User, lesson: Lesson) -> str:
     return f"""<div style="font-family:system-ui,sans-serif;max-width:560px;margin:auto;color:#1c1b22">
 <h2 style="margin:0 0 12px">{e(s.get("headline", lesson.title))}</h2>
 <p style="font-size:16px;line-height:1.5">{e(s.get("recap_message", ""))}</p>
-<h3>Key points</h3><ul>{items("key_points")}</ul>
-<h3>Before next lesson</h3><ul>{items("review_suggestions")}</ul>
-<p><a href="{e(url)}" style="background:#5b4cff;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Open the board</a></p>
+<h3>{e(t.key_points)}</h3><ul>{items("key_points")}</ul>
+<h3>{e(t.before_next_lesson)}</h3><ul>{items("review_suggestions")}</ul>
+<p><a href="{e(url)}" style="background:#5b4cff;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">{e(t.open_board)}</a></p>
 </div>"""
 
 
@@ -95,7 +101,8 @@ async def send_reminder(
 ) -> list[Reminder]:
     """Send the recap of `lesson` to `student` on every enabled channel and log each attempt."""
     text = render_text(student, lesson)
-    subject = f"Recap: {(lesson.summary or {}).get('headline', lesson.title)}"
+    headline = (lesson.summary or {}).get("headline", lesson.title)
+    subject = labels_for(student, lesson).subject.format(headline=headline)
     results = []
     for channel in channels_for(student):
         try:
