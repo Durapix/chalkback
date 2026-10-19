@@ -6,3 +6,7 @@
 site
 api/data
 **/.env
+board_examples
+private
+dusan_api.txt
+*api*.txt
