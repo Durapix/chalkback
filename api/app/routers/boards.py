@@ -1,6 +1,8 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
-from app.imaging import remove_images
+from app.imaging import remove_images, remove_source_files
+from app.importers.drawio import DrawioError
+from app.ingest import IngestError, owned_files, reimport, scene_files
 from app.jobs import reconstruct_board
 from app.models import Board, JobStatus, User
 from app.routers.lessons import board_brief, own_lesson, visible_lesson
@@ -44,8 +46,17 @@ def save_snapshot(board_id: int, body: SnapshotIn, user: CurrentUser, db: DB):
 
 @router.post("/{board_id}/reconstruct", response_model=BoardOut, status_code=202)
 def rerun_reconstruction(board_id: int, teacher: Teacher, db: DB, tasks: BackgroundTasks):
+    """Rebuild a board: imported boards are re-imported at once, photos go back to the AI."""
     board = visible_board(db, teacher, board_id)
     own_lesson(db, teacher, board.lesson_id)
+    if board.source_file:
+        try:
+            stale = reimport(board)
+        except (DrawioError, IngestError, OSError) as exc:
+            raise HTTPException(status.HTTP_409_CONFLICT, f"Re-import failed: {exc}") from exc
+        db.commit()
+        remove_images(f for f in stale if f not in scene_files(board.scene))
+        return board_out(board)
     if board.image_file is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Board has no source image")
     board.status, board.error = JobStatus.pending, None
@@ -57,8 +68,9 @@ def rerun_reconstruction(board_id: int, teacher: Teacher, db: DB, tasks: Backgro
 @router.delete("/{board_id}", status_code=204)
 def delete_board(board_id: int, teacher: Teacher, db: DB):
     board = visible_board(db, teacher, board_id)
-    own_lesson(db, teacher, board.lesson_id)
+    lesson = own_lesson(db, teacher, board.lesson_id)
+    uploads, sources = owned_files([board], keep=[b for b in lesson.boards if b.id != board.id])
     db.delete(board)
     db.commit()
-    if board.image_file:
-        remove_images([board.image_file])
+    remove_images(uploads)
+    remove_source_files(sources)

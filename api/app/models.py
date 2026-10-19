@@ -98,6 +98,9 @@ class Board(Base):
     position: Mapped[int] = mapped_column(default=0)
     # Random, unguessable file name under the uploads dir (served at /files/<name>).
     image_file: Mapped[str | None] = mapped_column(String(128))
+    # Imported source document (e.g. draw.io) in the sources dir, and which page this board is.
+    source_file: Mapped[str | None] = mapped_column(String(128))
+    source_page: Mapped[int] = mapped_column(default=0)
     width: Mapped[int] = mapped_column(default=1600)
     height: Mapped[int] = mapped_column(default=900)
 
@@ -105,7 +108,7 @@ class Board(Base):
         Enum(JobStatus, native_enum=False), default=JobStatus.pending
     )
     error: Mapped[str | None] = mapped_column(Text)
-    # Structured scene extracted by the AI (see app.ai.scene.Scene).
+    # Structured scene extracted by the AI (see app.scene.Scene).
     scene: Mapped[dict | None] = mapped_column(JSON)
     # tldraw store snapshot once the board has been opened/edited in the app.
     snapshot: Mapped[dict | None] = mapped_column(JSON)
