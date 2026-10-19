@@ -57,18 +57,12 @@ only worth it once a single server can't keep up.
 
 ## Board rendering
 
-The scene is deliberately simpler than tldraw's own record format. The model describes **what**
-is on the board and **where**, and `web/src/board/sceneToShapes.ts` maps it to shapes:
-
-| Scene element | tldraw shape |
-|---|---|
-| original image | locked `image` shape, opacity adjustable |
-| `text` | `text` (hand-drawn font) |
-| `math` | custom `math` shape, KaTeX-rendered, LaTeX-editable |
-| `geo` | `geo` |
-| `arrow` | `arrow` |
-| `draw` | `line` (cubic spline) |
+Every board has a **scene** (`api/app/scene.py`): a list of elements with board-pixel
+coordinates. Scenes come from the draw.io importer (`api/app/importers/drawio.py`) or from the AI
+(`api/app/ai/vision.py`, converted with `VisionScene.to_scene`). `web/src/board/sceneToShapes.ts`
+turns a scene into tldraw shapes and then creates the arrow **bindings** that keep connectors
+attached to the elements they point at. See [Importing boards](boards.md) for the element types.
 
 After the first user edit, the full tldraw snapshot is stored and becomes the source of truth for
-that board. Re-running reconstruction clears the snapshot and rebuilds the board from the new
-scene.
+that board. Re-running a board (AI or re-import) clears the snapshot and rebuilds it from the
+new scene.
