@@ -1,9 +1,14 @@
 # AI pipeline
 
-Both AI steps live in `api/app/ai/` and go through one helper, `structured_call`
-(`api/app/ai/claude.py`). It sends a single request to Claude with
-[structured outputs](https://platform.claude.com/docs) and gets back a Pydantic model that has
-already been validated.
+Both AI steps live in `api/app/ai/` and send one request each to Claude, through two helpers in
+`api/app/ai/claude.py`:
+
+- `structured_call` for summaries uses [structured outputs](https://platform.claude.com/docs),
+  so the answer is guaranteed to match the schema.
+- `tool_call` for board reconstruction passes the board vocabulary as a regular (non-strict) tool
+  and validates the answer with Pydantic. The vocabulary is too large for structured outputs: the
+  API rejects its compiled grammar ("The compiled grammar is too large"). It also streams, with
+  room for long answers on dense boards.
 
 | Setting | Default | Meaning |
 |---|---|---|
@@ -50,6 +55,19 @@ The prompt forbids inventing topics that aren't on the boards or in the notes.
 
 When `ANTHROPIC_API_KEY` is empty, `mock_scene` and `mock_summary` return deterministic sample
 data. The demo, the tests and offline development all use this mode.
+
+## Measured on real boards
+
+First run on two real Miro collages (2026-10-19, Claude Opus 5.5, effort `high`):
+
+| Screenshot | Time | Input tokens | Output tokens | Cost |
+|---|---|---|---|---|
+| Arrays, matrices, sieve, bit operations | 88 s | 7,229 | 11,613 | $0.26 |
+| URM programs, linked lists, memory | 33 s | 7,229 | 3,946 | $0.11 |
+
+Structure, colors and Cyrillic text came out right. Every sizing problem was in the renderer and
+was fixed without new requests: font sizes are now fitted to the measured text width, and sticker
+and shape labels are fitted to their box.
 
 ## Cost notes
 
