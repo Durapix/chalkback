@@ -165,7 +165,7 @@ def test_colored_table_cells_keep_their_fill_and_labels_fit():
     row = by_id(scene, "r")
     assert isinstance(row, GeoElement)
     assert (row.color, row.fill, row.label, row.align) == (
-        "light-green",
+        "green",
         "solid",
         "Item 2",
         "start",
