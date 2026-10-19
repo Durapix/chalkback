@@ -1,6 +1,6 @@
 """Flowcharts read as algorithms (fictional charts, built directly as scenes)."""
 
-from app.ai.summarize import mock_summary
+from app.ai.summarize import language_instruction, mock_summary
 from app.flowchart import analyze, board_reading
 from app.models import Board, Lesson
 from app.scene import Scene
@@ -146,3 +146,9 @@ def test_entity_relationship_diagrams_are_not_algorithms():
     (er,) = analyze_er(s)
     assert er.relations == ["Room —[is of type]→ Room types", "Room → Accommodation"]
     assert "Entity-relationship diagram" in board_reading(s)
+
+
+def test_serbian_recaps_are_written_in_cyrillic():
+    assert "Cyrillic" in language_instruction("Serbian")
+    assert "Cyrillic" in language_instruction(" serbian ")
+    assert language_instruction("English") == "English"
