@@ -20,6 +20,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Board reconstruction sends its vocabulary as a validated tool schema instead of structured
+  outputs, which rejected it as too large. It streams, with room for dense boards. Tested on two
+  real Miro collages for $0.37 in total.
+- AI-read text, sticker and shape labels are sized to fit what they cover.
+
 - The AI reconstruction prompt and schema target the real board material: Miro screenshots of
   programming, math, electronics and database lessons, often stitched into collages.
 - Deploy and AI review workflows stay off until `DEPLOY_ENABLED` / `AI_REVIEW_ENABLED` are set.

@@ -1,4 +1,4 @@
-from app.ai.claude import structured_call
+from app.ai.claude import tool_call
 from app.ai.vision import VisionScene
 from app.config import get_settings
 from app.imaging import model_image
@@ -31,7 +31,9 @@ indentation with spaces), `handwriting` for handwriting, `typed` otherwise.
 - `stroke`: sketches, underlines, check marks, graphs and axes, as a polyline.
 - `region`: content better kept as a picture of the original: pasted documents and task \
 statements, screenshots of other programs, tables of small print, dense handwritten \
-derivations, complex drawings. Still put the readable text of a region in the transcript.
+derivations, complex drawings. Still put the readable text of a region in the transcript. \
+A region's box must not overlap any element you transcribe separately: either keep content \
+as a picture or transcribe it, never both, so nothing appears twice.
 - `frame`: each separate part of a collage, with a short title.
 
 Coordinates are pixels in the image as you receive it, origin top-left; place everything \
@@ -45,7 +47,8 @@ async def reconstruct(file_name: str) -> Scene:
         return mock_scene(file_name)
 
     data, width, height, factor = model_image(file_name)
-    vision = await structured_call(
+    # The vocabulary is too rich for structured outputs' grammar limit, so it goes as a tool.
+    vision = await tool_call(
         system=SYSTEM,
         content=[
             {
@@ -59,6 +62,8 @@ async def reconstruct(file_name: str) -> Scene:
         ],
         output=VisionScene,
         effort=get_settings().reconstruct_effort,
+        tool_name="record_board",
+        tool_description="Record the reconstructed board as a structured scene.",
     )
     return vision.to_scene(factor)
 

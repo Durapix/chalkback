@@ -14,7 +14,8 @@
 ## Next up
 
 - [ ] Alembic migrations (required before real data in production)
-- [ ] Evaluate AI reconstruction on the Miro screenshots, once the budget is released
+- [x] First AI reconstruction test on the two Miro screenshots ($0.37)
+- [ ] Re-check that regions no longer overlap transcribed text (prompt rule added, unverified)
 - [ ] Telegram `/start <code>` deep-link to connect students without copying chat IDs
 - [ ] Evaluate reconstruction quality on real boards. Build a small eval set and tune effort
 - [ ] Per-lesson "ask about this lesson" chat for students, grounded in the boards

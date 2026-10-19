@@ -257,6 +257,32 @@ class Scene(BaseModel):
         return Scene.model_validate(data)
 
 
+TLDRAW_S_FONT_PX = 18  # font size of tldraw size "s"; text `scale` is relative to it
+
+
+def fit_text_scale(width: float, text: str, mono: bool = False) -> float:
+    """Text scale that makes the longest line about `width` pixels wide.
+
+    Used for AI-read text, where we know a block's width and its lines but not its font size.
+    """
+    longest = max((len(line) for line in text.splitlines()), default=0) or 1
+    char_w = 0.6 if mono else 0.52  # average glyph width / font size
+    font_px = width / (longest * char_w)
+    return round(max(0.4, min(font_px / TLDRAW_S_FONT_PX, 6.0)), 3)
+
+
+LABEL_PAD = 16  # tldraw's padding around shape labels, in label-scale units
+
+
+def fit_label_scale(w: float, h: float, text: str) -> float:
+    """Label scale that fits `text` (no wrapping inside words) into a w x h shape."""
+    lines = text.splitlines() or [""]
+    longest = max((len(line) for line in lines), default=0) or 1
+    by_width = w / (longest * 0.62 * TLDRAW_S_FONT_PX + 2 * LABEL_PAD)
+    by_height = h / (len(lines) * 1.35 * TLDRAW_S_FONT_PX + 2 * LABEL_PAD)
+    return round(max(0.05, 0.95 * min(by_width, by_height, 4.0)), 3)
+
+
 def reading_order_text(scene: Scene) -> str:
     """Plain-text reading of a scene (top-to-bottom, left-to-right) for summaries."""
     labelled: list[tuple[float, float, str]] = []

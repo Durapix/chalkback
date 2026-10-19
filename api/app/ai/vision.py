@@ -23,6 +23,8 @@ from app.scene import (
     Point,
     Scene,
     TextElement,
+    fit_label_scale,
+    fit_text_scale,
 )
 
 
@@ -213,7 +215,7 @@ class VisionScene(BaseModel):
                             w=el.w * f,
                             text=el.text,
                             color=el.color,
-                            scale=f,
+                            scale=fit_text_scale(el.w * f, el.text, mono=True),
                         )
                     )
                 else:
@@ -225,10 +227,13 @@ class VisionScene(BaseModel):
                             y=el.y * f,
                             w=el.w * f,
                             text=el.text,
-                            size=el.size,
+                            # The model gives each line and the block's width, not a font
+                            # size; size the text so its longest line fills that width.
+                            size="s",
                             color=el.color,
                             font="draw" if el.style == "handwriting" else "sans",
-                            scale=f,
+                            wrap=False,
+                            scale=fit_text_scale(el.w * f, el.text),
                         )
                     )
             elif isinstance(el, VMath):
@@ -285,7 +290,7 @@ class VisionScene(BaseModel):
                         fill="solid" if el.filled else "none",
                         label=el.label,
                         font="draw",
-                        scale=f,
+                        scale=fit_label_scale(el.w * f, el.h * f, el.label),
                     )
                 )
             elif isinstance(el, VConnector):
