@@ -6,15 +6,18 @@ On the server (prefix each with `docker exec -it chalkback-api-1`):
     python -m app.cli set-email --email typo@example.con --new-email you@example.com
     python -m app.cli set-password --email you@example.com
     python -m app.cli delete-teacher --email typo@example.con
+    python -m app.cli send-test-email --to you@example.com
 """
 
 import argparse
+import asyncio
 import getpass
 import sys
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app import notify
 from app.config import get_settings
 from app.db import SessionLocal
 from app.models import Lesson, Role, User
@@ -111,6 +114,39 @@ def delete_teacher(db: Session, email: str) -> None:
     db.commit()
 
 
+# A fictional recap in Serbian, rendered with the real reminder templates.
+SAMPLE_SUMMARY = {
+    "headline": "Пробна порука: Chalkback подсетник ради",
+    "recap_message": (
+        "Здраво! Ово је пробни подсетник из Chalkback-а. Ако га читаш, слање е-поште "
+        "преко Resend-а ради."
+    ),
+    "key_points": ["Домен chalkback.xyz је потврђен за слање.", "Наслови су на српском."],
+    "review_suggestions": ["Нема ништа да урадиш: ово је само проба."],
+    "language": "Serbian",
+}
+
+
+async def send_test_email(to: str) -> str:
+    """Send a sample recap reminder to `to` through the configured e-mail provider. Nothing is
+    stored: the student and lesson exist only in memory."""
+    to = _normalize(to)
+    student = User(name="Test", email=to, language="Serbian")
+    lesson = Lesson(id=0, title="Пробни час", summary=SAMPLE_SUMMARY)
+    labels = notify.labels_for(student, lesson)
+    subject = labels.subject.format(headline=SAMPLE_SUMMARY["headline"])
+    try:
+        await notify.send_email(
+            to,
+            subject,
+            notify.render_text(student, lesson),
+            notify.render_html(student, lesson),
+        )
+    except notify.DeliveryError as exc:
+        raise CliError(str(exc)) from exc
+    return subject
+
+
 def _check(password: str) -> None:
     if len(password) < MIN_PASSWORD:
         raise CliError(f"The password needs at least {MIN_PASSWORD} characters")
@@ -142,6 +178,8 @@ def main(argv: list[str] | None = None) -> int:
     reset.add_argument("--email", required=True)
     delete = sub.add_parser("delete-teacher", help="Delete a teacher with no students or lessons")
     delete.add_argument("--email", required=True)
+    test_mail = sub.add_parser("send-test-email", help="Send a sample reminder (stores nothing)")
+    test_mail.add_argument("--to", required=True)
     args = parser.parse_args(argv)
 
     try:
@@ -162,6 +200,9 @@ def main(argv: list[str] | None = None) -> int:
             elif args.command == "set-password":
                 user = set_password(db, args.email, _prompt_password())
                 print(f"Password updated for {user.email}.")
+            elif args.command == "send-test-email":
+                subject = asyncio.run(send_test_email(args.to))
+                print(f"Sent “{subject}” to {args.to.strip().lower()}.")
             else:
                 _confirm(f"Delete teacher {args.email.strip().lower()}?")
                 delete_teacher(db, args.email)
