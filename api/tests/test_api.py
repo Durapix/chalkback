@@ -128,7 +128,13 @@ def outbox(monkeypatch):
     return sent
 
 
-def test_manual_reminder(client, teacher, outbox):
+@pytest.fixture
+def real_students(monkeypatch):
+    # The seeded students belong to the demo teacher, whose reminders are never delivered.
+    monkeypatch.setattr(notify, "is_demo_student", lambda db, student: False)
+
+
+def test_manual_reminder(client, teacher, outbox, real_students):
     student = client.get("/api/students", headers=teacher).json()[0]
     client.patch(
         f"/api/students/{student['id']}",
@@ -143,7 +149,7 @@ def test_manual_reminder(client, teacher, outbox):
     assert len(log) == 2
 
 
-def test_scheduled_reminders_are_idempotent(client, teacher, outbox):
+def test_scheduled_reminders_are_idempotent(client, teacher, outbox, real_students):
     student = client.get("/api/students", headers=teacher).json()[0]
     soon = (datetime.now(UTC) + timedelta(hours=3)).isoformat()
     client.patch(f"/api/students/{student['id']}", headers=teacher, json={"next_lesson_at": soon})
@@ -152,6 +158,33 @@ def test_scheduled_reminders_are_idempotent(client, teacher, outbox):
         second = asyncio.run(notify.dispatch_due_reminders(db))
     assert first == 1  # email only for this student
     assert second == 0
+
+
+def test_demo_reminders_are_logged_but_never_delivered(client, teacher, outbox):
+    """The demo teacher's password is public: nobody may use it to send real mail."""
+    seeded = client.get("/api/students", headers=teacher).json()[0]
+    stranger = client.post(
+        "/api/students",
+        headers=teacher,
+        json={"name": "Stranger", "email": "someone@example.org", "password": "password123"},
+    ).json()
+    lesson = client.get(f"/api/lessons?student_id={seeded['id']}", headers=teacher).json()[0]
+    for student in (seeded, stranger):
+        client.patch(
+            f"/api/students/{student['id']}",
+            headers=teacher,
+            json={"telegram_chat_id": "12345", "remind_by_telegram": True},
+        )
+    r = client.post(f"/api/students/{seeded['id']}/remind", headers=teacher)
+    assert r.status_code == 200, r.text
+    assert {x["status"] for x in r.json()} == {"skipped"}
+    with SessionLocal() as db:
+        from app.models import Lesson, User
+
+        student = db.get(User, stranger["id"])
+        asyncio.run(notify.send_reminder(db, student, db.get(Lesson, lesson["id"])))
+        assert notify.is_demo_student(db, student)
+    assert outbox == []
 
 
 def test_failed_multi_upload_leaves_no_files(client, teacher):

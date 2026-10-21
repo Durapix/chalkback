@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Security
+
+- Reminders for the public demo teacher's students are logged as `skipped` and never delivered,
+  so the demo login cannot be used to send e-mail or Telegram messages to anyone.
+
 ## [0.2.0] - 2026-10-21
 
 Live at https://chalkback.xyz: real lesson boards imported exactly, recaps that read them, and an

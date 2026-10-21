@@ -96,6 +96,18 @@ def channels_for(student: User) -> list[str]:
     return channels
 
 
+def is_demo_student(db: Session, student: User) -> bool:
+    """Students of the public demo teacher (whose password is on the login page). Their
+    reminders are never delivered: the seeded addresses are fictional, and anyone could add a
+    "student" with a stranger's address and press send."""
+    demo_email = get_settings().demo_teacher_email
+    teacher = db.get(User, student.teacher_id) if student.teacher_id else None
+    demo_domain = demo_email.partition("@")[2]
+    return (teacher is not None and teacher.email == demo_email) or student.email.endswith(
+        f"@{demo_domain}"
+    )
+
+
 async def send_reminder(
     db: Session, student: User, lesson: Lesson, for_session: datetime | None = None
 ) -> list[Reminder]:
@@ -103,14 +115,18 @@ async def send_reminder(
     text = render_text(student, lesson)
     headline = (lesson.summary or {}).get("headline", lesson.title)
     subject = labels_for(student, lesson).subject.format(headline=headline)
+    demo = is_demo_student(db, student)
     results = []
     for channel in channels_for(student):
         try:
-            if channel == "telegram":
-                await send_telegram(student.telegram_chat_id, text)
+            if demo:
+                status, detail = "skipped", "Demo account: reminders are logged, not delivered"
             else:
-                await send_email(student.email, subject, text, render_html(student, lesson))
-            status, detail = "sent", None
+                if channel == "telegram":
+                    await send_telegram(student.telegram_chat_id, text)
+                else:
+                    await send_email(student.email, subject, text, render_html(student, lesson))
+                status, detail = "sent", None
         except DeliveryError as exc:
             status, detail = "failed", str(exc)
             log.warning("Reminder to student %s via %s failed: %s", student.id, channel, exc)
