@@ -1,0 +1,33 @@
+- name: Upgrade packages
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    upgrade: safe
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name: [ca-certificates, curl, git, ufw, fail2ban, unattended-upgrades]
+    state: present
+
+- name: Unattended security upgrades and fail2ban are running
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop: [unattended-upgrades, fail2ban]
+
+# Building the web image (npm + vite) on a 4 GB server is safer with some swap.
+- name: Swap file exists
+  ansible.builtin.command: fallocate -l 2G /swapfile
+  args:
+    creates: /swapfile
+  register: swapfile
+
+- name: Swap file is set up
+  when: swapfile is changed
+  ansible.builtin.shell: chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+
+- name: Swap is used after reboots
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    line: /swapfile none swap sw 0 0

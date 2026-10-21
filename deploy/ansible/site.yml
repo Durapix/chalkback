@@ -1,0 +1,15 @@
+# Provision the server and deploy Chalkback. Safe to run again; `--tags app` only deploys.
+- name: Chalkback server
+  hosts: chalkback
+  become: true
+  vars:
+    app_dir: /opt/chalkback
+    chalkback_ref: main
+    deploy_user: deploy
+    deploy_public_key: "{{ lookup('file', '/ssh/key.pub') }}"
+  roles:
+    - { role: base, tags: [base] }
+    - { role: ssh, tags: [ssh] }
+    - { role: firewall, tags: [firewall] }
+    - { role: docker, tags: [docker] }
+    - { role: app, tags: [app] }

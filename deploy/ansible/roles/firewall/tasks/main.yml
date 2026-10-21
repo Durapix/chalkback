@@ -1,0 +1,16 @@
+- name: Allow SSH, HTTP and HTTPS (HTTP/3 too)
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+  loop:
+    - { port: "22", proto: tcp }
+    - { port: "80", proto: tcp }
+    - { port: "443", proto: tcp }
+    - { port: "443", proto: udp }
+
+- name: Deny everything else incoming and enable the firewall
+  community.general.ufw:
+    state: enabled
+    default: deny
+    direction: incoming

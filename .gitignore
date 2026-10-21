@@ -39,3 +39,6 @@ board_examples/
 private/
 dusan_api.txt
 *api*.txt
+
+# Ansible inventory (server address)
+deploy/ansible/inventory.ini
