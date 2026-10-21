@@ -1,6 +1,6 @@
-# Deploys main to the Hetzner server after CI passes.
-# Secrets: DEPLOY_HOST, DEPLOY_SSH_KEY (private key of the server's `deploy` user).
-# Variable: DEPLOY_ENABLED=true turns it on.
+# Deploys main to the server after CI passes, with the Ansible playbook's `app` role.
+# Secrets: DEPLOY_HOST, DEPLOY_SSH_KEY (a private key the server accepts for root).
+# Variables: DEPLOY_DOMAIN (public host name), DEPLOY_ENABLED=true turns it on.
 name: Deploy
 
 on:
@@ -16,22 +16,26 @@ concurrency:
 
 jobs:
   deploy:
-    # Stays off until the server exists: set the repository variable DEPLOY_ENABLED=true.
     if: ${{ vars.DEPLOY_ENABLED == 'true' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       # Secrets go through env vars, never interpolated into the script text.
-      - name: Configure SSH
+      - name: Configure SSH and inventory
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_DOMAIN: ${{ vars.DEPLOY_DOMAIN }}
         run: |
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/chalkback
+          chmod 600 ~/.ssh/chalkback
+          ssh-keygen -y -f ~/.ssh/chalkback > ~/.ssh/chalkback.pub
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          printf '[chalkback]\nprod ansible_host=%s ansible_user=root\n\n[chalkback:vars]\nchalkback_domain=%s\n' \
+            "$DEPLOY_HOST" "$DEPLOY_DOMAIN" > deploy/ansible/inventory.ini
       - name: Deploy
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-        run: ssh "deploy@$DEPLOY_HOST" /opt/chalkback/deploy/deploy.sh
+        run: deploy/ansible/run.sh --tags app -e chalkback_ref=HEAD

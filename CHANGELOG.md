@@ -8,6 +8,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Ansible provisioning and deploys** (`deploy/ansible`). One playbook hardens a fresh Ubuntu
+  server (key-only SSH, ufw, fail2ban, unattended upgrades, swap), installs Docker, and ships
+  `main` with `git archive`, so only tracked files ever leave the machine. It generates the
+  database password and JWT secret on the server and waits for HTTPS health. It runs from a
+  container, so it works on Windows. The CI deploy workflow uses the same playbook. This
+  replaces `bootstrap-server.sh` and `deploy.sh`.
+- **Entity-relationship diagrams** are recognized and explained as data models, not algorithms.
+- Recap section titles (and reminder e-mail subject and button) follow the recap's language.
 - **Exact draw.io import.** HTML exports, `.drawio` and `.xml` files become boards immediately,
   with no AI and no cost. Shapes, colors, labels, opacity, tables, groups, pen ink and embedded
   images are kept, and connectors stay attached to their shapes. Each page is one board, and
@@ -20,6 +28,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **draw.io fidelity.** Table cells keep their fill colors and headers (red/green filtering
+  steps on database boards). Labels are fitted so shapes never grow into each other. Wires
+  routed through waypoints are kept. Lines end on rotated shapes, and west-facing trapezoids are flipped.
+- Recaps say so honestly when a board is thin or partial, and read red/green table marks.
+- Serbian recaps are always written in Cyrillic, and new students default to Serbian.
 - **Recaps understand flowcharts.** Boards' flowcharts are read as algorithms: START/INPUT/
   OUTPUT, IF and REPEAT with branch labels (including T/F written next to arrows), boxed or
   joined shapes as units, called boxes as calls and recursion, and titles above or below a

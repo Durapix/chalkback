@@ -1,0 +1,93 @@
+# Ship only tracked files of the chosen ref: private material (gitignored) can never leave.
+- name: Archive the release locally
+  delegate_to: localhost
+  become: false
+  run_once: true
+  ansible.builtin.shell: |
+    set -e
+    sha=$(git -C /repo rev-parse --short {{ chalkback_ref }})
+    git -C /repo archive --format=tar.gz -o /tmp/chalkback-$sha.tar.gz {{ chalkback_ref }}
+    echo $sha
+  register: release
+  changed_when: false
+
+- name: Release directory
+  ansible.builtin.file:
+    path: "{{ app_dir }}/releases/{{ release.stdout }}"
+    state: directory
+    mode: "0755"
+
+- name: Unpack the release
+  ansible.builtin.unarchive:
+    src: "/tmp/chalkback-{{ release.stdout }}.tar.gz"
+    dest: "{{ app_dir }}/releases/{{ release.stdout }}"
+    creates: "{{ app_dir }}/releases/{{ release.stdout }}/deploy/docker-compose.yml"
+
+- name: Secrets directory (root only)
+  ansible.builtin.file:
+    path: "{{ app_dir }}/secrets"
+    state: directory
+    mode: "0700"
+
+# Generated on the server once; they never pass through Ansible or this machine.
+- name: Database password and JWT secret
+  ansible.builtin.shell: |
+    umask 077
+    printf 'POSTGRES_PASSWORD=%s\nJWT_SECRET=%s\n' "$(openssl rand -hex 32)" "$(openssl rand -hex 32)" > generated.env
+  args:
+    chdir: "{{ app_dir }}/secrets"
+    creates: "{{ app_dir }}/secrets/generated.env"
+
+- name: Optional integrations (Anthropic, Resend, Telegram, tldraw license), filled in by hand
+  ansible.builtin.copy:
+    dest: "{{ app_dir }}/secrets/extra.env"
+    mode: "0600"
+    force: false
+    content: |
+      # Add e.g. ANTHROPIC_API_KEY=, RESEND_API_KEY=, EMAIL_FROM=, TELEGRAM_BOT_TOKEN=,
+      # VITE_TLDRAW_LICENSE_KEY= and rerun `run.sh --tags app`.
+
+- name: Settings
+  ansible.builtin.template:
+    src: chalkback.env.j2
+    dest: "{{ app_dir }}/chalkback.env"
+    mode: "0644"
+
+- name: Current release
+  ansible.builtin.file:
+    src: "{{ app_dir }}/releases/{{ release.stdout }}"
+    dest: "{{ app_dir }}/current"
+    state: link
+
+- name: Build and start the stack
+  ansible.builtin.command: >-
+    docker compose -p chalkback
+    --env-file {{ app_dir }}/chalkback.env
+    --env-file {{ app_dir }}/secrets/generated.env
+    --env-file {{ app_dir }}/secrets/extra.env
+    up -d --build --remove-orphans
+  args:
+    chdir: "{{ app_dir }}/current/deploy"
+  register: up
+  changed_when: "'Started' in up.stderr or 'Recreated' in up.stderr or 'Created' in up.stderr"
+
+- name: The site answers over HTTPS
+  ansible.builtin.uri:
+    url: "https://{{ chalkback_domain }}/api/health"
+  register: health
+  until: health.status == 200
+  retries: 36
+  delay: 5
+
+- name: Keep the last three releases
+  ansible.builtin.shell: |
+    current=$(basename "$(readlink -f {{ app_dir }}/current)")
+    ls -1t | grep -vx "$current" | tail -n +3 | xargs -r rm -rf
+  args:
+    chdir: "{{ app_dir }}/releases"
+  register: pruned
+  changed_when: pruned.stdout != ""
+
+- name: Remove unused images
+  ansible.builtin.command: docker image prune -f
+  changed_when: false
