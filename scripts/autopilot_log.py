@@ -1,6 +1,7 @@
 """Export the repository's history as JSON for the landing page's "built on autopilot" section.
 
-Every merge into main is treated as a merged pull request; tags are releases.
+Every merge into main (local merges and GitHub pull requests) is a merged pull request;
+tags are releases.
 Usage: python scripts/autopilot_log.py > landing/autopilot.json
 """
 
@@ -23,9 +24,13 @@ def main() -> None:
     merges, commits_total = [], int(git("rev-list", "--count", "main").strip())
     for entry in filter(None, (e.strip() for e in raw.split(REC))):
         sha, date, subject, body = (entry.split(SEP) + [""] * 4)[:4]
-        if not subject.startswith("Merge branch"):
+        if subject.startswith("Merge pull request"):
+            # GitHub: "Merge pull request #5 from owner/branch"; the body is the PR title.
+            branch = subject.split(" from ", 1)[1].split("/", 1)[-1]
+        elif subject.startswith("Merge branch"):
+            branch = subject.split("'")[1] if "'" in subject else subject
+        else:
             continue
-        branch = subject.split("'")[1] if "'" in subject else subject
         body_lines = [ln for ln in body.strip().splitlines() if not ln.startswith("Co-Authored-By")]
         commits = int(git("rev-list", "--count", f"{sha}^1..{sha}^2").strip())
         merges.append(

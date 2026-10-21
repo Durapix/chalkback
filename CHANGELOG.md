@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-21
+
+Live at https://chalkback.xyz: real lesson boards imported exactly, recaps that read them, and an
+Ansible-managed server with backups and migrations.
+
 ### Added
 
 - **Ansible provisioning and deploys** (`deploy/ansible`). One playbook hardens a fresh Ubuntu
@@ -76,5 +81,6 @@ mock-AI mode.
 - **Deployment**: Docker Compose with Caddy (HTTPS) and Postgres, a Hetzner bootstrap script,
   and GitHub Actions for CI, AI PR review, releases and deploys.
 
-[Unreleased]: ../../compare/v0.1.0...HEAD
+[Unreleased]: ../../compare/v0.2.0...HEAD
+[0.2.0]: ../../releases/tag/v0.2.0
 [0.1.0]: ../../releases/tag/v0.1.0
