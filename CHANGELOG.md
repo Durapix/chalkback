@@ -8,8 +8,9 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- `python -m app.cli create-teacher` / `set-password`: server-side account commands that prompt
-  for the password, for production where registration is closed.
+- `python -m app.cli`: server-side account commands for production, where registration is closed:
+  `list-teachers`, `create-teacher` (confirms the address first), `set-email` (fix a typo),
+  `set-password`, `delete-teacher` (only accounts without students or lessons).
 
 ### Security
 
