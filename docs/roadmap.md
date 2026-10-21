@@ -8,9 +8,8 @@
   spending on (draw.io boards need no AI at all).
 - [x] **Real board material.** 13 draw.io boards (imported exactly) and Miro screenshots
   (programming, math, electronics, databases; Serbian Cyrillic and Latin).
-- [x] **Hetzner server.** Provisioned and deployed with Ansible (see [Deployment](deployment.md)),
-  served over HTTPS on a temporary sslip.io host name.
-- [ ] **Domain.** Point it at the server and set `chalkback_domain`.
+- [x] **Hetzner server.** Provisioned and deployed with Ansible (see [Deployment](deployment.md)).
+- [x] **Domain.** Live at <https://chalkback.xyz> (DNS on Cloudflare, proxied).
 - [ ] **tldraw license.** Decide on a production license key vs. the watermarked option.
 
 ## Next up
