@@ -6,17 +6,21 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Security
+
+- Pillow 12.3 → 13.0 (24 CVEs; it decodes uploaded board images) and certifi 2026.10.19.
+- Deploys pull fresh base images, so fixes such as Node.js 22.23.4 (October 2026 security
+  release, CVE-2026-111497 and others) reach the web build. Previously cached images were reused.
+- GitHub Actions are pinned to commit SHAs instead of movable tags.
+- Reminders for the public demo teacher's students are logged as `skipped` and never delivered,
+  so the demo login cannot be used to send e-mail or Telegram messages to anyone.
+
 ### Added
 
 - `python -m app.cli`: server-side account commands for production, where registration is closed:
   `list-teachers`, `create-teacher` (confirms the address first), `set-email` (fix a typo),
   `set-password`, `delete-teacher` (only accounts without students or lessons), and `send-test-email`
   (a sample reminder through the real templates and Resend, storing nothing).
-
-### Security
-
-- Reminders for the public demo teacher's students are logged as `skipped` and never delivered,
-  so the demo login cannot be used to send e-mail or Telegram messages to anyone.
 
 ## [0.2.0] - 2026-10-21
 
