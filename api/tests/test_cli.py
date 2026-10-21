@@ -77,3 +77,30 @@ def test_main_asks_before_creating(client, monkeypatch, capsys):
     assert code == 1 and "Cancelled" in capsys.readouterr().err
     with SessionLocal() as db:
         assert "oops@example.org" not in [t.email for t, _, _ in cli.list_teachers(db)]
+
+
+def test_send_test_email_uses_the_reminder_templates_and_stores_nothing(client, monkeypatch):
+    sent = []
+
+    async def fake_email(to, subject, text, html_body):
+        sent.append((to, subject, text, html_body))
+
+    monkeypatch.setattr(cli.notify, "send_email", fake_email)
+    assert cli.main(["send-test-email", "--to", "Me@Example.org"]) == 0
+    (to, subject, text, html_body) = sent[0]
+    assert to == "me@example.org" and subject.startswith("Подсетник: ")
+    assert "Најважније:" in text and "Пре следећег часа" in html_body
+    with SessionLocal() as db:
+        from app.models import Lesson, User
+
+        assert db.query(User).filter_by(email="me@example.org").count() == 0
+        assert db.query(Lesson).filter_by(title="Пробни час").count() == 0
+
+
+def test_send_test_email_reports_delivery_errors(client, monkeypatch, capsys):
+    async def failing(*args):
+        raise cli.notify.DeliveryError("RESEND_API_KEY is not configured")
+
+    monkeypatch.setattr(cli.notify, "send_email", failing)
+    assert cli.main(["send-test-email", "--to", "me@example.org"]) == 1
+    assert "RESEND_API_KEY" in capsys.readouterr().err

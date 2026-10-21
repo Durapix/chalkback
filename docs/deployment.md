@@ -99,6 +99,13 @@ docker exec -it chalkback-api-1 python -m app.cli set-password --email you@examp
 docker exec -it chalkback-api-1 python -m app.cli delete-teacher --email typo@exmaple.com
 ```
 
+To check that e-mail works after configuring Resend, send a sample reminder (in Serbian, made
+with the real templates; nothing is stored):
+
+```bash
+docker exec -it chalkback-api-1 python -m app.cli send-test-email --to you@example.com
+```
+
 A mistyped address is fixed with `set-email`, which keeps the account and its data. `delete-teacher`
 only removes accounts that have no students or lessons yet.
 

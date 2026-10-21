@@ -10,7 +10,8 @@ uses [Semantic Versioning](https://semver.org/).
 
 - `python -m app.cli`: server-side account commands for production, where registration is closed:
   `list-teachers`, `create-teacher` (confirms the address first), `set-email` (fix a typo),
-  `set-password`, `delete-teacher` (only accounts without students or lessons).
+  `set-password`, `delete-teacher` (only accounts without students or lessons), and `send-test-email`
+  (a sample reminder through the real templates and Resend, storing nothing).
 
 ### Security
 
