@@ -1,0 +1,29 @@
+# Nightly pg_dump and uploads archive on the server itself, kept for backup_keep_days.
+# This protects against mistakes and bad deploys, not against losing the server: copy
+# /opt/chalkback/backups elsewhere (or enable the provider's snapshots) for that.
+- name: Backup directory (root only)
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    mode: "0700"
+
+- name: Backup script
+  ansible.builtin.template:
+    src: chalkback-backup.sh.j2
+    dest: /usr/local/bin/chalkback-backup
+    mode: "0755"
+
+- name: Backup service and timer
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: "0644"
+  loop: [chalkback-backup.service, chalkback-backup.timer]
+  register: units
+
+- name: Nightly backups are scheduled
+  ansible.builtin.systemd_service:
+    name: chalkback-backup.timer
+    state: started
+    enabled: true
+    daemon_reload: "{{ units is changed }}"

@@ -75,4 +75,21 @@ docker compose -p chalkback exec db pg_dump -U chalkback chalkback > backup.sql 
 Releases are unpacked in `/opt/chalkback/releases/<commit>`, `current` points at the running
 one, and the last three are kept.
 
-Uploaded board images live in the `uploads` volume. Back it up together with the database.
+### Backups
+
+A systemd timer (Ansible role `backup`) runs `/usr/local/bin/chalkback-backup` every night at
+03:30 UTC. It writes a `pg_dump` and an archive of the uploads volume (board images and draw.io
+sources) to `/opt/chalkback/backups`, and keeps 14 days of them. Run it any time with
+`systemctl start chalkback-backup`.
+
+These backups live on the same server, so they protect against mistakes and bad deploys, not
+against losing the server. For that, copy the folder elsewhere now and then, or turn on the
+hosting provider's snapshots.
+
+Restore:
+
+```bash
+cd /opt/chalkback/backups
+docker exec -i chalkback-db-1 pg_restore -U chalkback -d chalkback --clean --if-exists < db-<stamp>.dump
+docker exec -i chalkback-api-1 tar xzf - -C /data < uploads-<stamp>.tar.gz
+```

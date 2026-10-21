@@ -1,0 +1,8 @@
+[Unit]
+Description=Chalkback database and uploads backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/chalkback-backup
