@@ -85,6 +85,19 @@ docker compose -p chalkback exec db pg_dump -U chalkback chalkback > backup.sql 
 Releases are unpacked in `/opt/chalkback/releases/<commit>`, `current` points at the running
 one, and the last three are kept.
 
+### Accounts
+
+Registration is closed in production. Create real teacher accounts on the server; the command
+asks for the password (twice) and never takes it as an argument:
+
+```bash
+docker exec -it chalkback-api-1 python -m app.cli create-teacher --email you@example.com --name "Your Name"
+docker exec -it chalkback-api-1 python -m app.cli set-password --email you@example.com
+```
+
+Reminders for students of the public demo teacher are logged as `skipped` and never delivered.
+Only students of real teacher accounts get e-mail and Telegram reminders.
+
 ### Backups
 
 A systemd timer (Ansible role `backup`) runs `/usr/local/bin/chalkback-backup` every night at
