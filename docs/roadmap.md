@@ -14,7 +14,7 @@
 
 ## Next up
 
-- [ ] Alembic migrations (required before real data in production)
+- [x] Alembic migrations (required before real data in production)
 - [x] First AI reconstruction test on the two Miro screenshots ($0.37)
 - [ ] Re-check that regions no longer overlap transcribed text (prompt rule added, unverified)
 - [ ] Telegram `/start <code>` deep-link to connect students without copying chat IDs

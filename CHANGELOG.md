@@ -14,6 +14,8 @@ uses [Semantic Versioning](https://semver.org/).
   database password and JWT secret on the server and waits for HTTPS health. It runs from a
   container, so it works on Windows. The CI deploy workflow uses the same playbook. This
   replaces `bootstrap-server.sh` and `deploy.sh`.
+- **Database migrations** (Alembic). The app upgrades its schema at startup; existing databases
+  are stamped as the baseline and keep their data. A test fails if models and migrations drift.
 - **Nightly backups** of the database and uploads on the server (Ansible role `backup`, 14 days),
   with restore steps in the deployment docs.
 - **Entity-relationship diagrams** are recognized and explained as data models, not algorithms.

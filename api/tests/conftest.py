@@ -22,6 +22,8 @@ from app.main import app  # noqa: E402
 @pytest.fixture
 def client():
     Base.metadata.drop_all(engine)
+    with engine.begin() as conn:  # so startup migrates the empty database from scratch
+        conn.exec_driver_sql("DROP TABLE IF EXISTS alembic_version")
     with TestClient(app) as c:
         yield c
 

@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
-from app.db import Base, SessionLocal, engine
+from app.db import SessionLocal, engine
+from app.migrate import upgrade_db
 from app.notify import dispatch_due_reminders
 from app.routers import auth, boards, lessons, students
 from app.seed import seed_demo
@@ -26,7 +27,7 @@ async def reminder_tick() -> None:
 async def lifespan(app: FastAPI):
     settings = get_settings()
     settings.uploads_dir.mkdir(parents=True, exist_ok=True)
-    Base.metadata.create_all(engine)
+    upgrade_db(engine)
     if settings.seed_demo:
         with SessionLocal() as db:
             seed_demo(db)
