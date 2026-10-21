@@ -87,13 +87,20 @@ one, and the last three are kept.
 
 ### Accounts
 
-Registration is closed in production. Create real teacher accounts on the server; the command
-asks for the password (twice) and never takes it as an argument:
+Registration is closed in production. Create real teacher accounts on the server. Commands that
+change an address ask for confirmation first, and passwords are typed at a prompt (twice), never
+given as arguments. From your machine, wrap each one in `ssh -t <server> '…'`:
 
 ```bash
+docker exec -it chalkback-api-1 python -m app.cli list-teachers
 docker exec -it chalkback-api-1 python -m app.cli create-teacher --email you@example.com --name "Your Name"
+docker exec -it chalkback-api-1 python -m app.cli set-email --email typo@exmaple.com --new-email you@example.com
 docker exec -it chalkback-api-1 python -m app.cli set-password --email you@example.com
+docker exec -it chalkback-api-1 python -m app.cli delete-teacher --email typo@exmaple.com
 ```
+
+A mistyped address is fixed with `set-email`, which keeps the account and its data. `delete-teacher`
+only removes accounts that have no students or lessons yet.
 
 Reminders for students of the public demo teacher are logged as `skipped` and never delivered.
 Only students of real teacher accounts get e-mail and Telegram reminders.

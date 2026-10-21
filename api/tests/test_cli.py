@@ -29,11 +29,51 @@ def test_set_password(client):
             cli.set_password(db, "nobody@example.org", "a-new-password")
 
 
+def test_mistyped_teacher_email_can_be_corrected_or_deleted(client):
+    with SessionLocal() as db:
+        cli.create_teacher(db, "me@exmaple.org", "Me", "long-enough-1")
+        cli.create_teacher(db, "me@typo.org", "Me", "long-enough-1")
+        user = cli.set_email(db, "me@exmaple.org", "Me@Example.org")
+        assert user.email == "me@example.org"
+        cli.delete_teacher(db, "me@typo.org")
+        emails = [t.email for t, _, _ in cli.list_teachers(db)]
+        assert "me@example.org" in emails and "me@typo.org" not in emails
+        with pytest.raises(cli.CliError, match="demo teacher"):
+            cli.delete_teacher(db, "teacher@demo.chalkback")
+        with pytest.raises(cli.CliError, match="already has an account"):
+            cli.set_email(db, "me@example.org", "teacher@demo.chalkback")
+        with pytest.raises(cli.CliError, match="Not an e-mail"):
+            cli.set_email(db, "me@example.org", "me@example")
+    assert auth(client, "me@example.org", "long-enough-1")
+
+
+def test_teachers_with_data_are_not_deleted(client, teacher):
+    with SessionLocal() as db:
+        cli.create_teacher(db, "busy@example.org", "Busy", "long-enough-1")
+    busy = auth(client, "busy@example.org", "long-enough-1")
+    client.post(
+        "/api/students",
+        headers=busy,
+        json={"name": "S", "email": "s@example.org", "password": "password123"},
+    )
+    with SessionLocal() as db, pytest.raises(cli.CliError, match="has students or lessons"):
+        cli.delete_teacher(db, "busy@example.org")
+
+
 def test_main_prompts_for_the_password(client, monkeypatch, capsys):
     answers = iter(["typed-password-1", "typed-password-1"])
     monkeypatch.setattr(cli.getpass, "getpass", lambda prompt: next(answers))
+    monkeypatch.setattr("builtins.input", lambda prompt: "y")
     code = cli.main(["create-teacher", "--email", "cli@example.org", "--name", "Cli"])
     assert code == 0 and "Created teacher cli@example.org" in capsys.readouterr().out
     mismatch = iter(["one-password-1", "other-password"])
     monkeypatch.setattr(cli.getpass, "getpass", lambda prompt: next(mismatch))
     assert cli.main(["set-password", "--email", "cli@example.org"]) == 1
+
+
+def test_main_asks_before_creating(client, monkeypatch, capsys):
+    monkeypatch.setattr("builtins.input", lambda prompt: "n")
+    code = cli.main(["create-teacher", "--email", "Oops@Example.org", "--name", "Oops"])
+    assert code == 1 and "Cancelled" in capsys.readouterr().err
+    with SessionLocal() as db:
+        assert "oops@example.org" not in [t.email for t, _, _ in cli.list_teachers(db)]
