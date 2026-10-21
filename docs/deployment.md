@@ -31,6 +31,12 @@ macOS and Linux. See `deploy/ansible/README.md` for the details.
    `<ip-with-dashes>.sslip.io` resolves to it and gets a real certificate.
 3. **Run** `deploy/ansible/run.sh`. Caddy fetches the certificate on the first request.
 
+Production is <https://chalkback.xyz>. Its DNS is on Cloudflare with the proxy on. Cloudflare
+passes plain HTTP to the server, so Caddy gets its Let's Encrypt certificate with the HTTP
+challenge. The server has a valid certificate, so Cloudflare's SSL mode can be **Full (strict)**.
+Caddy already redirects HTTP to HTTPS. If a certificate renewal ever fails, check that Cloudflare
+still lets `/.well-known/acme-challenge/` through on plain HTTP.
+
 Later deploys: `deploy/ansible/run.sh --tags app`.
 
 ### Secrets
