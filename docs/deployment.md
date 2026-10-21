@@ -47,6 +47,10 @@ Later deploys: `deploy/ansible/run.sh --tags app`.
 `EMAIL_FROM`, `TELEGRAM_BOT_TOKEN`, `VITE_TLDRAW_LICENSE_KEY`. Without an Anthropic key the app
 runs in mock-AI mode and spends nothing.
 
+After changing `extra.env`, run `deploy/ansible/run.sh --tags app`. The tldraw key is built into
+the web app, so it only takes effect after that rebuild, and browsers may need a hard refresh.
+Without a valid key, tldraw hides the board editor after about 5 seconds on any HTTPS domain.
+
 ### Continuous deployment
 
 `.github/workflows/deploy.yml` runs the playbook's `app` role after **CI** succeeds on `main`.

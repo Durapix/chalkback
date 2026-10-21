@@ -10,7 +10,8 @@
   (programming, math, electronics, databases; Serbian Cyrillic and Latin).
 - [x] **Hetzner server.** Provisioned and deployed with Ansible (see [Deployment](deployment.md)).
 - [x] **Domain.** Live at <https://chalkback.xyz> (DNS on Cloudflare, proxied).
-- [ ] **tldraw license.** Decide on a production license key vs. the watermarked option.
+- [x] **tldraw license.** 100-day evaluation key, live on chalkback.xyz. **Expires 2027-01-29**:
+  decide on a commercial or hobby (watermarked) license before then.
 
 ## Next up
 
