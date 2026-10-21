@@ -13,6 +13,18 @@ Configuration is read from environment variables or `.env` (see `.env.example`).
 Without `ANTHROPIC_API_KEY` the reconstruction and summary pipeline returns deterministic
 mock output.
 
+## Database migrations
+
+The schema is managed by Alembic (`migrations/`). At startup the app upgrades the database to
+the latest revision. A database created before migrations existed is stamped as the baseline
+first, and its data is kept. After changing `app/models.py`:
+
+```bash
+uv run alembic revision --autogenerate -m "what changed"   # then read the generated file
+```
+
+`tests/test_migrations.py` fails when the models and the migrations disagree.
+
 ## Modules
 
 | Module | Responsibility |
