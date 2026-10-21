@@ -59,13 +59,25 @@
     dest: "{{ app_dir }}/current"
     state: link
 
-- name: Build and start the stack
+# Base images (python, node, caddy, postgres) are pulled fresh on every deploy so security
+# fixes in them (e.g. a patched Node.js used to build the web app) actually reach production.
+- name: Pull current images and build
+  ansible.builtin.shell: |
+    set -e
+    compose="docker compose -p chalkback --env-file {{ app_dir }}/chalkback.env --env-file {{ app_dir }}/secrets/generated.env --env-file {{ app_dir }}/secrets/extra.env"
+    $compose pull --ignore-buildable --quiet
+    $compose build --pull --quiet
+  args:
+    chdir: "{{ app_dir }}/current/deploy"
+  changed_when: false
+
+- name: Start the stack
   ansible.builtin.command: >-
     docker compose -p chalkback
     --env-file {{ app_dir }}/chalkback.env
     --env-file {{ app_dir }}/secrets/generated.env
     --env-file {{ app_dir }}/secrets/extra.env
-    up -d --build --remove-orphans
+    up -d --remove-orphans
   args:
     chdir: "{{ app_dir }}/current/deploy"
   register: up
