@@ -1,6 +1,94 @@
 {
-  "commits": 26,
+  "commits": 62,
   "merges": [
+    {
+      "sha": "e7ace76",
+      "date": "2026-10-21T14:27:51+02:00",
+      "branch": "feat/alembic-migrations",
+      "summary": "feat(api): Alembic migrations, applied at startup",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "5514ea3",
+      "date": "2026-10-21T14:23:35+02:00",
+      "branch": "feat/backups",
+      "summary": "feat(deploy): nightly database and uploads backups",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "026d250",
+      "date": "2026-10-21T14:22:24+02:00",
+      "branch": "chore/domain-chalkback-xyz",
+      "summary": "docs: production lives at chalkback.xyz",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "676fe9d",
+      "date": "2026-10-21T13:32:28+02:00",
+      "branch": "feat/ansible-deploy",
+      "summary": "feat(deploy): provision and deploy the server with Ansible",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "9ac7edc",
+      "date": "2026-10-19T20:07:01+02:00",
+      "branch": "feat/recap-labels-language",
+      "summary": "feat: recap section titles in the recap's language",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "d429a25",
+      "date": "2026-10-19T20:00:20+02:00",
+      "branch": "feat/serbian-cyrillic",
+      "summary": "feat(api): Serbian recaps always in Cyrillic",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "d4ee1d5",
+      "date": "2026-10-19T19:32:01+02:00",
+      "branch": "fix/board-fidelity-er",
+      "summary": "fix: board fidelity, ER diagrams, Serbian default",
+      "commits": 2,
+      "review_fixes": 0
+    },
+    {
+      "sha": "2645c14",
+      "date": "2026-10-19T16:58:25+02:00",
+      "branch": "feat/flowchart-recaps",
+      "summary": "Recaps understand flowcharts: boards' flowcharts are read as algorithms (IF/REPEAT/units/calls) and the recap prompt explains what each computes. Verified on the 13 real draw.io boards locally; CI green; self-reviewed.",
+      "commits": 3,
+      "review_fixes": 0
+    },
+    {
+      "sha": "58e083e",
+      "date": "2026-10-19T16:29:54+02:00",
+      "branch": "fix/ai-reconstruction",
+      "summary": "AI reconstruction now works on real Miro screenshots: vocabulary sent as a validated tool schema (structured outputs rejected it as too large), and AI text/labels are sized to fit. First real run: 2 requests, $0.37. CI green; self-reviewed.",
+      "commits": 3,
+      "review_fixes": 1
+    },
+    {
+      "sha": "38c90fc",
+      "date": "2026-10-19T16:10:47+02:00",
+      "branch": "feat/real-board-import",
+      "summary": "Exact draw.io import (no AI) and a Miro-oriented AI scene vocabulary for the real lesson boards. Verified on all 13 real draw.io boards (rendered and inspected) and the mock AI board; CI green (api, web, docs, images). Self-reviewed.",
+      "commits": 5,
+      "review_fixes": 1
+    },
+    {
+      "sha": "266b835",
+      "date": "2026-10-16T12:14:03+02:00",
+      "branch": "feat/local-docker",
+      "summary": "Run the production Docker stack locally (deploy/local.env, http://localhost:8080) and keep Deploy and AI review workflows off until DEPLOY_ENABLED / AI_REVIEW_ENABLED are set. Verified with a full local docker compose run; CI green (api, web, docs, images). Self-reviewed.",
+      "commits": 5,
+      "review_fixes": 0
+    },
     {
       "sha": "b389326",
       "date": "2026-10-16T09:54:16+02:00",
