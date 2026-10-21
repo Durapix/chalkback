@@ -6,6 +6,8 @@
     app_dir: /opt/chalkback
     chalkback_ref: main
     deploy_user: deploy
+    backup_dir: /opt/chalkback/backups
+    backup_keep_days: 14
     deploy_public_key: "{{ lookup('file', '/ssh/key.pub') }}"
   roles:
     - { role: base, tags: [base] }
@@ -13,3 +15,4 @@
     - { role: firewall, tags: [firewall] }
     - { role: docker, tags: [docker] }
     - { role: app, tags: [app] }
+    - { role: backup, tags: [backup] }

@@ -14,6 +14,8 @@ uses [Semantic Versioning](https://semver.org/).
   database password and JWT secret on the server and waits for HTTPS health. It runs from a
   container, so it works on Windows. The CI deploy workflow uses the same playbook. This
   replaces `bootstrap-server.sh` and `deploy.sh`.
+- **Nightly backups** of the database and uploads on the server (Ansible role `backup`, 14 days),
+  with restore steps in the deployment docs.
 - **Entity-relationship diagrams** are recognized and explained as data models, not algorithms.
 - Recap section titles (and reminder e-mail subject and button) follow the recap's language.
 - **Exact draw.io import.** HTML exports, `.drawio` and `.xml` files become boards immediately,

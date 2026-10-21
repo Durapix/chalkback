@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Nightly backup of the database and uploaded files. Managed by Ansible (role: backup).
+set -euo pipefail
+dir={{ backup_dir }}
+stamp=$(date -u +%Y%m%d-%H%M%S)
+umask 077
+
+docker exec chalkback-db-1 pg_dump -U chalkback -Fc chalkback > "$dir/db-$stamp.dump.part"
+mv "$dir/db-$stamp.dump.part" "$dir/db-$stamp.dump"
+
+docker exec chalkback-api-1 tar czf - -C /data . > "$dir/uploads-$stamp.tar.gz.part"
+mv "$dir/uploads-$stamp.tar.gz.part" "$dir/uploads-$stamp.tar.gz"
+
+find "$dir" -maxdepth 1 -type f \( -name 'db-*' -o -name 'uploads-*' \) -mtime +{{ backup_keep_days }} -delete
+echo "backup $stamp done: $(du -sh "$dir" | cut -f1) in $dir"

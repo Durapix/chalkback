@@ -10,6 +10,7 @@ every deploy:
 | `firewall` | ufw: SSH, HTTP and HTTPS only |
 | `docker` | Docker Engine and the Compose plugin from Docker's repository; a `deploy` user |
 | `app` | Ships the chosen git ref (`git archive`, so only tracked files), writes the env file with secrets generated on the server, builds and starts the stack, waits for HTTPS health |
+| `backup` | Nightly `pg_dump` and uploads archive in `/opt/chalkback/backups`, kept 14 days |
 
 ## Run
 
