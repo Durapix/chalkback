@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `python -m app.cli create-teacher` / `set-password`: server-side account commands that prompt
+  for the password, for production where registration is closed.
+
 ### Security
 
 - Reminders for the public demo teacher's students are logged as `skipped` and never delivered,
