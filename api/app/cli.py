@@ -7,6 +7,7 @@ On the server (prefix each with `docker exec -it chalkback-api-1`):
     python -m app.cli set-password --email you@example.com
     python -m app.cli delete-teacher --email typo@example.con
     python -m app.cli send-test-email --to you@example.com
+    python -m app.cli send-test-push --email student@example.com
 """
 
 import argparse
@@ -147,6 +148,26 @@ async def send_test_email(to: str) -> str:
     return subject
 
 
+async def send_test_push(db: Session, email: str) -> int:
+    """Send a sample notification to every device of the student with `email` (demo students
+    included: this runs on the server, not through the public demo login)."""
+    student = _find(db, email)
+    devices = student.push_devices
+    if not devices:
+        raise CliError(f"{student.email} has not turned on notifications on any device")
+    try:
+        await notify.send_push(
+            db,
+            student,
+            "Пробно обавештење",
+            "Ако ово видиш, обавештења из Chalkback-а раде.",
+            get_settings().app_base_url + "/",
+        )
+    except notify.DeliveryError as exc:
+        raise CliError(str(exc)) from exc
+    return devices
+
+
 def _check(password: str) -> None:
     if len(password) < MIN_PASSWORD:
         raise CliError(f"The password needs at least {MIN_PASSWORD} characters")
@@ -180,6 +201,8 @@ def main(argv: list[str] | None = None) -> int:
     delete.add_argument("--email", required=True)
     test_mail = sub.add_parser("send-test-email", help="Send a sample reminder (stores nothing)")
     test_mail.add_argument("--to", required=True)
+    test_push = sub.add_parser("send-test-push", help="Send a sample notification to a student")
+    test_push.add_argument("--email", required=True)
     args = parser.parse_args(argv)
 
     try:
@@ -200,6 +223,9 @@ def main(argv: list[str] | None = None) -> int:
             elif args.command == "set-password":
                 user = set_password(db, args.email, _prompt_password())
                 print(f"Password updated for {user.email}.")
+            elif args.command == "send-test-push":
+                devices = asyncio.run(send_test_push(db, args.email))
+                print(f"Sent a test notification to {devices} device(s).")
             elif args.command == "send-test-email":
                 subject = asyncio.run(send_test_email(args.to))
                 print(f"Sent “{subject}” to {args.to.strip().lower()}.")

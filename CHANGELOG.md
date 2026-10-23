@@ -26,8 +26,8 @@ uses [Semantic Versioning](https://semver.org/).
   Android home-screen icons, `.ico` fallback, and a web app manifest for the app.
 - `python -m app.cli`: server-side account commands for production, where registration is closed:
   `list-teachers`, `create-teacher` (confirms the address first), `set-email` (fix a typo),
-  `set-password`, `delete-teacher` (only accounts without students or lessons), and `send-test-email`
-  (a sample reminder through the real templates and Resend, storing nothing).
+  `set-password`, `delete-teacher` (only accounts without students or lessons), `send-test-email`
+  (a sample reminder through the real templates and Resend, storing nothing) and `send-test-push`.
 
 ## [0.2.0] - 2026-10-21
 

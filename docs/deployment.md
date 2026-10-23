@@ -106,6 +106,12 @@ with the real templates; nothing is stored):
 docker exec -it chalkback-api-1 python -m app.cli send-test-email --to you@example.com
 ```
 
+To check notifications, have the student turn them on, then send them a sample:
+
+```bash
+docker exec -it chalkback-api-1 python -m app.cli send-test-push --email student@example.com
+```
+
 A mistyped address is fixed with `set-email`, which keeps the account and its data. `delete-teacher`
 only removes accounts that have no students or lessons yet.
 

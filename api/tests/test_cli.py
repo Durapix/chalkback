@@ -104,3 +104,18 @@ def test_send_test_email_reports_delivery_errors(client, monkeypatch, capsys):
     monkeypatch.setattr(cli.notify, "send_email", failing)
     assert cli.main(["send-test-email", "--to", "me@example.org"]) == 1
     assert "RESEND_API_KEY" in capsys.readouterr().err
+
+
+def test_send_test_push_reaches_the_students_devices(client, monkeypatch, capsys):
+    mia = auth(client, "mia@demo.chalkback", "demo-password")
+    sent = []
+    monkeypatch.setattr(cli.notify, "webpush", lambda info, data, **kw: sent.append(info))
+    assert cli.main(["send-test-push", "--email", "mia@demo.chalkback"]) == 1
+    assert "not turned on notifications" in capsys.readouterr().err
+    client.post(
+        "/api/push/subscriptions",
+        headers=mia,
+        json={"endpoint": "https://fcm.googleapis.com/x", "keys": {"p256dh": "k", "auth": "a"}},
+    )
+    assert cli.main(["send-test-push", "--email", "mia@demo.chalkback"]) == 0
+    assert sent[0]["endpoint"] == "https://fcm.googleapis.com/x"
