@@ -11,8 +11,11 @@ const isInstalled = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true
 
+// Bump when public/sw.js changes. A new URL also sidesteps any copy a CDN cached earlier.
+const SW_VERSION = 2
+
 async function registration() {
-  return navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {
+  return navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js?v=${SW_VERSION}`, {
     scope: import.meta.env.BASE_URL,
   })
 }
