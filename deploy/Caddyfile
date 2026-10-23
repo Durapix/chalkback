@@ -29,8 +29,11 @@
 		header @fresh Cache-Control "no-cache"
 		# Client-side routes fall back to the app; missing files stay 404 instead of being
 		# answered (and cached) as HTML.
-		@route not path /assets/* *.js *.css *.map *.png *.ico *.svg *.webmanifest *.json
-		try_files @route {path} /index.html
+		@spa {
+			not path /assets/* *.js *.css *.map *.png *.ico *.svg *.webmanifest *.json
+			not file
+		}
+		rewrite @spa /index.html
 		file_server
 	}
 
