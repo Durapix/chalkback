@@ -19,8 +19,19 @@ at `/openapi.json`.
 | GET | `/students` | teacher | The teacher's students |
 | POST | `/students` | teacher | Create a student account |
 | PATCH | `/students/{id}` | teacher | Update language, reminder channels, Telegram chat ID, next lesson |
+| POST | `/students/{id}/telegram-link` | teacher | One-time `t.me/<bot>?start=<code>` link that connects the student's Telegram |
 | POST | `/students/{id}/remind` | teacher | Send the latest recap now |
 | GET | `/students/{id}/reminders` | teacher | Reminder log |
+| GET | `/students/me` | student | The student's own settings (channels, connected devices) |
+| POST | `/students/me/telegram-link` | student | Connect link for the student's own Telegram |
+
+## Notifications (Web Push)
+
+| Method | Path | Who | Description |
+|---|---|---|---|
+| GET | `/push/key` | any user | The server's public VAPID key (`applicationServerKey`) |
+| POST | `/push/subscriptions` | student | Save this device's push subscription (browser push services only) |
+| POST | `/push/unsubscribe` | owner | Forget a device by its endpoint |
 
 ## Lessons
 

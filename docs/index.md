@@ -24,9 +24,9 @@ and keep working on them.
 | | |
 |---|---|
 | Backend | Python 3.12, FastAPI, SQLAlchemy (SQLite in dev, PostgreSQL in production) |
-| AI | Claude vision with structured outputs, through the official `anthropic` SDK |
+| AI | Claude vision and structured outputs, through the official `anthropic` SDK; draw.io boards need no AI |
 | Frontend | React 19, Vite, TypeScript, tldraw, KaTeX |
-| Reminders | Telegram Bot API, Resend email |
+| Reminders | Resend email, Telegram Bot API, Web Push notifications |
 | Hosting | Docker Compose and Caddy on a Hetzner server |
 
 Next: [Getting started](getting-started.md).
