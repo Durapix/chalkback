@@ -1,6 +1,126 @@
 {
-  "commits": 62,
+  "commits": 92,
   "merges": [
+    {
+      "sha": "176ff32",
+      "date": "2026-10-23T14:01:31+02:00",
+      "branch": "docs/pre-0.3-cleanup",
+      "summary": "docs: bring docs up to date before v0.3.0",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "f60a6c0",
+      "date": "2026-10-23T13:54:50+02:00",
+      "branch": "fix/sw-versioned-url",
+      "summary": "fix(web): load the service worker from a versioned URL",
+      "commits": 1,
+      "review_fixes": 1
+    },
+    {
+      "sha": "c12cc5f",
+      "date": "2026-10-23T13:50:10+02:00",
+      "branch": "feat/test-push",
+      "summary": "feat(api): send-test-push command",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "ec34d83",
+      "date": "2026-10-23T13:47:45+02:00",
+      "branch": "fix/caddy-spa-fallback",
+      "summary": "fix(deploy): app fallback only for routes, not missing files",
+      "commits": 1,
+      "review_fixes": 1
+    },
+    {
+      "sha": "dcb7988",
+      "date": "2026-10-23T13:45:31+02:00",
+      "branch": "fix/caddy-cache-headers",
+      "summary": "fix(deploy): cache headers for the app; no HTML fallback for files",
+      "commits": 1,
+      "review_fixes": 1
+    },
+    {
+      "sha": "1c293c2",
+      "date": "2026-10-23T13:42:03+02:00",
+      "branch": "feat/web-push",
+      "summary": "feat: free push notifications (Web Push) as a reminder channel",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "2386ada",
+      "date": "2026-10-23T13:27:31+02:00",
+      "branch": "feat/telegram-connect-link",
+      "summary": "feat: Telegram connect links (press Start to connect)",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "94c3f03",
+      "date": "2026-10-23T13:16:55+02:00",
+      "branch": "feat/app-icons",
+      "summary": "feat: icons at every size and a web app manifest",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "d5510b8",
+      "date": "2026-10-22T00:18:21+02:00",
+      "branch": "security/october-2026-updates",
+      "summary": "security: October 2026 updates (Pillow, Node base image, pinned actions)",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "43b1d7a",
+      "date": "2026-10-22T00:01:40+02:00",
+      "branch": "feat/test-email",
+      "summary": "feat(api): send-test-email command to check e-mail delivery",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "a9593c4",
+      "date": "2026-10-21T23:41:12+02:00",
+      "branch": "feat/cli-fix-typos",
+      "summary": "feat(api): fix mistyped teacher addresses from the server",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "dac49ef",
+      "date": "2026-10-21T23:34:14+02:00",
+      "branch": "feat/admin-cli",
+      "summary": "feat(api): server commands to create teachers and set passwords",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "8d37c59",
+      "date": "2026-10-21T23:30:47+02:00",
+      "branch": "fix/no-delivery-for-demo",
+      "summary": "fix(api): never deliver reminders for demo accounts",
+      "commits": 1,
+      "review_fixes": 1
+    },
+    {
+      "sha": "6b429df",
+      "date": "2026-10-21T23:23:30+02:00",
+      "branch": "docs/tldraw-license",
+      "summary": "docs: tldraw evaluation license is live",
+      "commits": 1,
+      "review_fixes": 0
+    },
+    {
+      "sha": "48ee285",
+      "date": "2026-10-21T14:31:04+02:00",
+      "branch": "release/v0.2.0",
+      "summary": "release: v0.2.0",
+      "commits": 1,
+      "review_fixes": 0
+    },
     {
       "sha": "e7ace76",
       "date": "2026-10-21T14:27:51+02:00",
@@ -139,6 +259,10 @@
     }
   ],
   "releases": [
+    {
+      "name": "v0.2.0",
+      "date": "2026-10-21T14:31:09+02:00"
+    },
     {
       "name": "v0.1.0",
       "date": "2026-10-16T09:54:16+02:00"
