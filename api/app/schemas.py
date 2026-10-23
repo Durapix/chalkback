@@ -50,6 +50,7 @@ class StudentUpdate(BaseModel):
     telegram_chat_id: str | None = None
     remind_by_email: bool | None = None
     remind_by_telegram: bool | None = None
+    remind_by_push: bool | None = None
     next_lesson_at: datetime | None = None
 
 
@@ -58,6 +59,8 @@ class StudentOut(UserOut):
     telegram_chat_id: str | None
     remind_by_email: bool
     remind_by_telegram: bool
+    remind_by_push: bool
+    push_devices: int
     next_lesson_at: datetime | None
 
 

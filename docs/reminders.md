@@ -30,6 +30,26 @@ The API listens for these messages with long polling (`getUpdates`). Nothing is 
 Telegram's side and no webhook endpoint is exposed. Set `TELEGRAM_POLLING=false` to turn
 listening off. A chat ID can still be entered by hand on the student's card.
 
+## Notifications (Web Push)
+
+Free browser and phone notifications, with no third-party account and no phone numbers.
+
+1. The student signs in and presses **Turn on notifications** on their dashboard, then allows
+   notifications. They can do this on each device they want reminders on.
+2. Reminders then arrive as notifications ("Подсетник: …"). Tapping one opens the lesson.
+
+- **iPhone / iPad**: Apple only allows notifications for sites on the home screen. The student
+  taps **Share → Add to Home Screen**, opens Chalkback from there, and turns notifications on.
+  The dashboard explains this.
+- **Turning off**: the student presses **Turn off** on that device. The teacher can untick
+  **Notifications** on the student's card. Devices that were reset or unsubscribed in the browser
+  are forgotten the next time a reminder is sent.
+- **Keys**: the server signs notifications with a VAPID key pair that it creates on first start
+  (`DATA_DIR/vapid_private.pem`). The key is backed up with the uploads and never served. Replacing
+  it would make every device subscribe again.
+- **Safety**: devices may only subscribe through the browsers' own push services (Google,
+  Mozilla, Apple, Microsoft). The server never sends to arbitrary addresses.
+
 ## Email (Resend)
 
 1. Create an API key at [resend.com](https://resend.com) and set `RESEND_API_KEY`.
