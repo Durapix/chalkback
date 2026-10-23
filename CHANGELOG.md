@@ -17,6 +17,9 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Telegram connect links.** Teachers (or students themselves) get a one-time
+  `t.me/<bot>?start=<code>` link; pressing Start connects the student's Telegram for reminders.
+  `/stop` disconnects. Migration `0002` adds the link code.
 - **Icons at every size** from the existing logo (`branding/`): Telegram bot picture, iPhone and
   Android home-screen icons, `.ico` fallback, and a web app manifest for the app.
 - `python -m app.cli`: server-side account commands for production, where registration is closed:

@@ -61,6 +61,11 @@ class StudentOut(UserOut):
     next_lesson_at: datetime | None
 
 
+class TelegramLinkOut(BaseModel):
+    url: str
+    expires_at: datetime
+
+
 class LessonIn(BaseModel):
     student_id: int
     title: str = Field(min_length=1, max_length=200)

@@ -276,6 +276,26 @@ textarea:focus {
   gap: 10px;
 }
 
+.cb-telegram {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cb-link {
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--cb-line);
+  border-radius: 8px;
+  background: var(--cb-bg);
+  color: var(--cb-ink);
+}
+
 .cb-form {
   display: flex;
   flex-direction: column;
