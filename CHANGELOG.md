@@ -17,6 +17,8 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Icons at every size** from the existing logo (`branding/`): Telegram bot picture, iPhone and
+  Android home-screen icons, `.ico` fallback, and a web app manifest for the app.
 - `python -m app.cli`: server-side account commands for production, where registration is closed:
   `list-teachers`, `create-teacher` (confirms the address first), `set-email` (fix a typo),
   `set-password`, `delete-teacher` (only accounts without students or lessons), and `send-test-email`
