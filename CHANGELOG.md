@@ -15,6 +15,12 @@ uses [Semantic Versioning](https://semver.org/).
 - Reminders for the public demo teacher's students are logged as `skipped` and never delivered,
   so the demo login cannot be used to send e-mail or Telegram messages to anyone.
 
+### Fixed
+
+- The app's caching on the live site: fingerprinted assets are cached for a year, everything else
+  is revalidated, and missing files are 404 instead of the app page (Cloudflare had cached the
+  page in place of the service worker). The service worker loads from a versioned URL.
+
 ### Added
 
 - **Push notifications** (Web Push) as a free reminder channel: students turn them on per

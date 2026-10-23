@@ -29,11 +29,17 @@ uv run alembic revision --autogenerate -m "what changed"   # then read the gener
 
 | Module | Responsibility |
 |---|---|
-| `app/models.py` | SQLAlchemy models: users (teachers and students), lessons, boards, reminders |
+| `app/models.py` | SQLAlchemy models: users (teachers and students), lessons, boards, reminders, push subscriptions |
+| `app/migrate.py`, `migrations/` | Alembic migrations, applied at startup |
 | `app/routers/` | REST endpoints under `/api` |
 | `app/imaging.py` | Upload normalization; PDF pages rendered to PNG with pypdfium2 |
-| `app/ai/scene.py` | The structured scene format Claude returns for a board |
-| `app/ai/reconstruct.py` | Board image → scene (Claude vision + structured outputs) |
-| `app/ai/summarize.py` | Lesson boards + notes → student-facing summary |
+| `app/ingest.py`, `app/importers/drawio.py` | Uploads to boards; exact draw.io import |
+| `app/scene.py` | The board scene format, its reading order and transcript |
+| `app/flowchart.py` | Reads flowcharts as algorithms and recognizes ER diagrams |
+| `app/ai/reconstruct.py`, `app/ai/vision.py` | Board image → scene (Claude vision, validated tool schema) |
+| `app/ai/summarize.py` | Lesson boards + notes → student-facing summary (structured outputs) |
 | `app/jobs.py` | Background jobs that run the AI steps and record status |
-| `app/notify.py` | Reminder rendering and delivery (Telegram, Resend email), scheduler logic |
+| `app/notify.py`, `app/recap_labels.py` | Reminder rendering and delivery (Telegram, Resend email, Web Push), scheduler logic |
+| `app/telegram_bot.py` | Telegram connect links: `/start <code>` and `/stop` (long polling) |
+| `app/push.py` | Web Push keys (VAPID) and the allowed push services |
+| `app/cli.py` | Server-side commands: teacher accounts, test e-mail and notifications |

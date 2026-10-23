@@ -4,7 +4,7 @@
 
 Chalkback turns screenshots and PDF exports of tutoring whiteboards into live, editable
 [tldraw](https://tldraw.dev) boards, then uses an AI agent to summarize every lesson and
-remind each student what was covered — on Telegram, by email, or in the app.
+remind each student what was covered — by email, on Telegram, or as a phone notification.
 
 **Live:** <https://chalkback.xyz> · app at [/app](https://chalkback.xyz/app/) · docs at [/docs](https://chalkback.xyz/docs/)
 

@@ -19,6 +19,7 @@ flowchart LR
   A -- vision + structured outputs --> Claude[Claude API]
   A -- reminders --> T[Telegram Bot API]
   A -- reminders --> R[Resend]
+  A -- reminders --> P[Browser push services]
 ```
 
 ## Data model
@@ -29,9 +30,10 @@ flowchart LR
 | `lessons` | One tutoring session: title, subject, time, tutor notes, AI summary and its status. |
 | `boards` | One whiteboard image of a lesson: the stored PNG, AI scene, tldraw snapshot and status. |
 | `reminders` | Log of every reminder attempt per channel. It is also the dedup key for scheduled reminders. |
+| `push_subscriptions` | Devices on which a student turned notifications on (Web Push endpoint and keys). |
 
-Tables are created on startup (`Base.metadata.create_all`). Alembic migrations are on the
-[roadmap](roadmap.md) before real data goes into production.
+The schema is managed by Alembic (`api/migrations/`); the API upgrades the database at startup.
+See the [API README](https://github.com/Durapix/chalkback/tree/main/api#database-migrations).
 
 ## Request flow: uploading a board
 

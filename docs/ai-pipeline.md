@@ -26,7 +26,7 @@ A refusal that still remains is stored on the board or lesson as a readable erro
 
 1. The stored PNG is downscaled to a long edge of 1568 px for the model.
 2. Claude receives the image, its size, and a system prompt that defines the five element kinds.
-3. The response is validated against `Scene` (`api/app/ai/scene.py`) and scaled back to
+3. The response is validated against `Scene` (`api/app/scene.py`) and scaled back to
    full-resolution coordinates.
 
 The model answers with a `VisionScene` (`api/app/ai/vision.py`), whose vocabulary follows how
