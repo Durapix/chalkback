@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-23
+
+Reminders reach students where they are: e-mail from chalkback.xyz, Telegram with a one-tap
+connect link, and free push notifications. Plus this week's security updates and server tools.
+
 ### Security
 
 - Pillow 12.3 → 13.0 (24 CVEs; it decodes uploaded board images) and certifi 2026.10.19.
@@ -110,6 +115,7 @@ mock-AI mode.
 - **Deployment**: Docker Compose with Caddy (HTTPS) and Postgres, a Hetzner bootstrap script,
   and GitHub Actions for CI, AI PR review, releases and deploys.
 
-[Unreleased]: ../../compare/v0.2.0...HEAD
+[Unreleased]: ../../compare/v0.3.0...HEAD
+[0.3.0]: ../../releases/tag/v0.3.0
 [0.2.0]: ../../releases/tag/v0.2.0
 [0.1.0]: ../../releases/tag/v0.1.0

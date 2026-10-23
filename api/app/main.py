@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     settings = get_settings()
     settings.uploads_dir.mkdir(parents=True, exist_ok=True)
-    app = FastAPI(title=f"{settings.app_name} API", version="0.2.0", lifespan=lifespan)
+    app = FastAPI(title=f"{settings.app_name} API", version="0.3.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
