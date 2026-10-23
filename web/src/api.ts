@@ -9,6 +9,11 @@ export interface User {
   language: string
 }
 
+export interface TelegramLink {
+  url: string
+  expires_at: string
+}
+
 export interface Student extends User {
   telegram_chat_id: string | null
   remind_by_email: boolean
@@ -254,6 +259,9 @@ export const api = {
     request<Student>('PATCH', `/students/${id}`, data),
   remindNow: (id: number) => request<Reminder[]>('POST', `/students/${id}/remind`),
   reminders: (id: number) => request<Reminder[]>('GET', `/students/${id}/reminders`),
+  telegramLink: (id: number) => request<TelegramLink>('POST', `/students/${id}/telegram-link`),
+  myProfile: () => request<Student>('GET', '/students/me'),
+  myTelegramLink: () => request<TelegramLink>('POST', '/students/me/telegram-link'),
 
   lessons: (studentId?: number) =>
     request<Lesson[]>('GET', `/lessons${studentId ? `?student_id=${studentId}` : ''}`),

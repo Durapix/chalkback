@@ -16,6 +16,7 @@ function StudentDashboard() {
   }, [])
   return (
     <div className="cb-page">
+      <TelegramConnect />
       <h1>Your lessons</h1>
       {lessons === null && <p className="cb-muted">Loading…</p>}
       {lessons?.length === 0 && <p className="cb-muted">No lessons yet.</p>}
@@ -35,6 +36,40 @@ function StudentDashboard() {
           </Link>
         ))}
       </div>
+    </div>
+  )
+}
+
+/** Lets a student connect Telegram themselves: one tap opens the bot with their code. */
+function TelegramConnect() {
+  const [me, setMe] = useState<Student | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => {
+    api.myProfile().then(setMe).catch(() => setMe(null))
+  }, [])
+  if (!me) return null
+  const connect = async () => {
+    setError(null)
+    try {
+      const { url } = await api.myTelegramLink()
+      window.location.href = url
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed')
+    }
+  }
+  return (
+    <div className="cb-card cb-telegram">
+      {me.telegram_chat_id && me.remind_by_telegram ? (
+        <span>✓ Lesson reminders arrive on Telegram. Send /stop to the bot to turn them off.</span>
+      ) : (
+        <>
+          <span>Get lesson reminders on Telegram.</span>
+          <button className="cb-btn cb-btn-primary cb-btn-sm" onClick={connect}>
+            Connect Telegram
+          </button>
+        </>
+      )}
+      {error && <div className="cb-error">{error}</div>}
     </div>
   )
 }
@@ -227,6 +262,18 @@ function NewStudent({ onCreated }: { onCreated: () => void }) {
 function StudentCard({ student, onChange }: { student: Student; onChange: () => void }) {
   const [editing, setEditing] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [link, setLink] = useState<string | null>(null)
+
+  const makeLink = async () => {
+    setMessage(null)
+    try {
+      const res = await api.telegramLink(student.id)
+      setLink(res.url)
+      await navigator.clipboard?.writeText(res.url).catch(() => undefined)
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed')
+    }
+  }
 
   const save = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -275,6 +322,7 @@ function StudentCard({ student, onChange }: { student: Student; onChange: () => 
         Next lesson: {formatDate(student.next_lesson_at)}
         <br />
         Reminders: {channels || 'off'} · {student.language}
+        {student.remind_by_telegram && !student.telegram_chat_id && ' · Telegram not connected'}
       </div>
       {editing && (
         <form className="cb-form" onSubmit={save}>
@@ -300,9 +348,23 @@ function StudentCard({ student, onChange }: { student: Student; onChange: () => 
           <button className="cb-btn cb-btn-primary">Save</button>
         </form>
       )}
-      <button className="cb-btn cb-btn-ghost cb-btn-sm" onClick={remind}>
-        Send last recap now
-      </button>
+      <div className="cb-row-plain">
+        <button className="cb-btn cb-btn-ghost cb-btn-sm" onClick={remind}>
+          Send last recap now
+        </button>
+        <button className="cb-btn cb-btn-ghost cb-btn-sm" onClick={makeLink}>
+          {student.telegram_chat_id ? 'New Telegram link' : 'Telegram link'}
+        </button>
+      </div>
+      {link && (
+        <div className="cb-small">
+          <input className="cb-link" readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
+          <div className="cb-muted">
+            Copied. Send it to {student.name.split(' ')[0]}: opening it and pressing Start connects
+            their Telegram. Works once, for 14 days.
+          </div>
+        </div>
+      )}
       {message && <div className="cb-small cb-muted">{message}</div>}
     </div>
   )

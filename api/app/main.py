@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -12,6 +13,7 @@ from app.migrate import upgrade_db
 from app.notify import dispatch_due_reminders
 from app.routers import auth, boards, lessons, students
 from app.seed import seed_demo
+from app.telegram_bot import poll_forever
 
 log = logging.getLogger("chalkback")
 
@@ -39,7 +41,12 @@ async def lifespan(app: FastAPI):
         scheduler = AsyncIOScheduler()
         scheduler.add_job(reminder_tick, "interval", minutes=settings.reminder_interval_minutes)
         scheduler.start()
+    telegram = None
+    if settings.scheduler_enabled and settings.telegram_polling and settings.telegram_bot_token:
+        telegram = asyncio.create_task(poll_forever())
     yield
+    if telegram:
+        telegram.cancel()
     if scheduler:
         scheduler.shutdown(wait=False)
 

@@ -66,6 +66,9 @@ class User(Base):
     remind_by_email: Mapped[bool] = mapped_column(default=True)
     remind_by_telegram: Mapped[bool] = mapped_column(default=False)
     next_lesson_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    # One-time code for the student's Telegram connect link (t.me/<bot>?start=<code>).
+    telegram_link_code: Mapped[str | None] = mapped_column(String(32), unique=True, index=True)
+    telegram_link_expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
 
 class Lesson(Base):

@@ -30,6 +30,9 @@ class Settings(BaseSettings):
 
     # Reminders
     telegram_bot_token: str | None = None
+    # Listen for /start <code> and /stop messages (long polling; no webhook to configure).
+    telegram_polling: bool = True
+    telegram_link_days: int = 14
     resend_api_key: str | None = None
     email_from: str = "Chalkback <recaps@chalkback.local>"
     reminder_lead_hours: int = 24
