@@ -1,15 +1,18 @@
-"""Reminder delivery: Telegram bot messages and email via Resend."""
+"""Reminder delivery: Telegram bot messages, email via Resend, and Web Push notifications."""
 
 import asyncio
 import html
+import json
 import logging
 from datetime import datetime, timedelta
 
 import httpx
 import resend
+from pywebpush import WebPushException, webpush
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app import push
 from app.config import get_settings
 from app.models import JobStatus, Lesson, Reminder, User, utcnow
 from app.recap_labels import RecapLabels, recap_labels
@@ -87,12 +90,42 @@ async def send_email(to: str, subject: str, text: str, html_body: str) -> None:
         raise DeliveryError(f"Resend failed: {exc}") from exc
 
 
+async def send_push(db: Session, student: User, title: str, body: str, url: str) -> None:
+    """Notify every device the student allowed. Devices that unsubscribed are forgotten."""
+    payload = json.dumps({"title": title, "body": body, "url": url}, ensure_ascii=False)
+    delivered, errors = 0, []
+    for sub in list(student.push_subscriptions):
+        info = {"endpoint": sub.endpoint, "keys": {"p256dh": sub.p256dh, "auth": sub.auth}}
+        try:
+            await asyncio.to_thread(
+                webpush,
+                info,
+                payload,
+                vapid_private_key=push.vapid(),
+                vapid_claims=push.claims(),  # a fresh dict: webpush adds an expiry to it
+                ttl=24 * 3600,
+                timeout=15,
+            )
+            delivered += 1
+        except WebPushException as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            if status in (404, 410):  # the browser unsubscribed or was reset
+                db.delete(sub)
+            else:
+                errors.append(f"{status or 'error'}: {str(exc)[:120]}")
+    db.commit()
+    if not delivered:
+        raise DeliveryError("; ".join(errors) or "No device accepted the notification")
+
+
 def channels_for(student: User) -> list[str]:
     channels = []
     if student.remind_by_telegram and student.telegram_chat_id:
         channels.append("telegram")
     if student.remind_by_email:
         channels.append("email")
+    if student.remind_by_push and student.push_subscriptions:
+        channels.append("push")
     return channels
 
 
@@ -124,6 +157,15 @@ async def send_reminder(
             else:
                 if channel == "telegram":
                     await send_telegram(student.telegram_chat_id, text)
+                elif channel == "push":
+                    recap = (lesson.summary or {}).get("recap_message", lesson.title)
+                    await send_push(
+                        db,
+                        student,
+                        subject,
+                        recap[:240],
+                        f"{get_settings().app_base_url}/lessons/{lesson.id}",
+                    )
                 else:
                     await send_email(student.email, subject, text, render_html(student, lesson))
                 status, detail = "sent", None

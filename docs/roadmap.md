@@ -19,6 +19,7 @@
 - [x] First AI reconstruction test on the two Miro screenshots ($0.37)
 - [ ] Re-check that regions no longer overlap transcribed text (prompt rule added, unverified)
 - [x] Telegram `/start <code>` deep-link to connect students without copying chat IDs
+- [x] Free push notifications (Web Push) as a reminder channel
 - [ ] Evaluate reconstruction quality on real boards. Build a small eval set and tune effort
 - [ ] Per-lesson "ask about this lesson" chat for students, grounded in the boards
 - [ ] Spaced repetition: a second reminder a week later with a mini quiz

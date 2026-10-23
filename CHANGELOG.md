@@ -17,6 +17,8 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Push notifications** (Web Push) as a free reminder channel: students turn them on per
+  device; works on Android, desktop, and iPhone from the home screen. Migration `0003`.
 - **Telegram connect links.** Teachers (or students themselves) get a one-time
   `t.me/<bot>?start=<code>` link; pressing Start connects the student's Telegram for reminders.
   `/stop` disconnects. Migration `0002` adds the link code.

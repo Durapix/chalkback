@@ -18,6 +18,8 @@ export interface Student extends User {
   telegram_chat_id: string | null
   remind_by_email: boolean
   remind_by_telegram: boolean
+  remind_by_push: boolean
+  push_devices: number
   next_lesson_at: string | null
 }
 
@@ -262,6 +264,10 @@ export const api = {
   telegramLink: (id: number) => request<TelegramLink>('POST', `/students/${id}/telegram-link`),
   myProfile: () => request<Student>('GET', '/students/me'),
   myTelegramLink: () => request<TelegramLink>('POST', '/students/me/telegram-link'),
+  pushKey: () => request<{ public_key: string }>('GET', '/push/key'),
+  pushSubscribe: (sub: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+    request<void>('POST', '/push/subscriptions', sub),
+  pushUnsubscribe: (endpoint: string) => request<void>('POST', '/push/unsubscribe', { endpoint }),
 
   lessons: (studentId?: number) =>
     request<Lesson[]>('GET', `/lessons${studentId ? `?student_id=${studentId}` : ''}`),

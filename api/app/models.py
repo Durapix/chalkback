@@ -10,6 +10,7 @@ from sqlalchemy import (
     Text,
     TypeDecorator,
     UniqueConstraint,
+    true,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -65,10 +66,20 @@ class User(Base):
     telegram_chat_id: Mapped[str | None] = mapped_column(String(64))
     remind_by_email: Mapped[bool] = mapped_column(default=True)
     remind_by_telegram: Mapped[bool] = mapped_column(default=False)
+    # Browser / phone notifications, on every device the student allowed them on.
+    remind_by_push: Mapped[bool] = mapped_column(default=True, server_default=true())
     next_lesson_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     # One-time code for the student's Telegram connect link (t.me/<bot>?start=<code>).
     telegram_link_code: Mapped[str | None] = mapped_column(String(32), unique=True, index=True)
     telegram_link_expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+
+    push_subscriptions: Mapped[list["PushSubscription"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
+    @property
+    def push_devices(self) -> int:
+        return len(self.push_subscriptions)
 
 
 class Lesson(Base):
@@ -133,3 +144,18 @@ class Reminder(Base):
     status: Mapped[str] = mapped_column(String(16))
     detail: Mapped[str | None] = mapped_column(Text)
     sent_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class PushSubscription(Base):
+    """One browser or phone that agreed to receive notifications (Web Push)."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    endpoint: Mapped[str] = mapped_column(String(1024), unique=True, index=True)
+    p256dh: Mapped[str] = mapped_column(String(255))
+    auth: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    user: Mapped[User] = relationship(back_populates="push_subscriptions")

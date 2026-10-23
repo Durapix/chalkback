@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, type Lesson, type Student } from '../api'
 import { useAuth } from '../auth'
+import { type PushState, disablePush, enablePush, pushState } from '../push'
 import { StatusChip, formatDate, fromLocalInput, toLocalInput } from '../ui'
 
 export function Dashboard() {
@@ -16,6 +17,7 @@ function StudentDashboard() {
   }, [])
   return (
     <div className="cb-page">
+      <PushConnect />
       <TelegramConnect />
       <h1>Your lessons</h1>
       {lessons === null && <p className="cb-muted">Loading…</p>}
@@ -36,6 +38,52 @@ function StudentDashboard() {
           </Link>
         ))}
       </div>
+    </div>
+  )
+}
+
+const PUSH_TEXT: Record<PushState, string> = {
+  on: '✓ Lesson reminders arrive as notifications on this device.',
+  off: 'Get lesson reminders as notifications on this device.',
+  blocked: 'Notifications are blocked for this site. Allow them in the browser settings to get reminders here.',
+  'needs-install':
+    'On iPhone or iPad: tap Share → Add to Home Screen, open Chalkback from there, then turn notifications on.',
+  unsupported: 'This browser cannot show notifications.',
+}
+
+/** Turns browser / phone notifications on or off for this device. */
+function PushConnect() {
+  const [state, setState] = useState<PushState | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => {
+    pushState().then(setState).catch(() => setState('unsupported'))
+  }, [])
+  if (state === null) return null
+  const toggle = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      setState(state === 'on' ? await disablePush() : await enablePush())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="cb-card cb-telegram">
+      <span>{PUSH_TEXT[state]}</span>
+      {(state === 'on' || state === 'off') && (
+        <button
+          className={`cb-btn cb-btn-sm ${state === 'on' ? 'cb-btn-ghost' : 'cb-btn-primary'}`}
+          onClick={toggle}
+          disabled={busy}
+        >
+          {state === 'on' ? 'Turn off' : 'Turn on notifications'}
+        </button>
+      )}
+      {error && <div className="cb-error">{error}</div>}
     </div>
   )
 }
@@ -283,6 +331,7 @@ function StudentCard({ student, onChange }: { student: Student; onChange: () => 
       telegram_chat_id: String(f.get('telegram') || '') || null,
       remind_by_email: f.get('by_email') === 'on',
       remind_by_telegram: f.get('by_telegram') === 'on',
+      remind_by_push: f.get('by_push') === 'on',
       next_lesson_at: fromLocalInput(String(f.get('next') ?? '')),
     })
     setEditing(false)
@@ -303,7 +352,13 @@ function StudentCard({ student, onChange }: { student: Student; onChange: () => 
     }
   }
 
-  const channels = [student.remind_by_email && 'email', student.remind_by_telegram && 'Telegram']
+  const channels = [
+    student.remind_by_email && 'email',
+    student.remind_by_telegram && 'Telegram',
+    student.remind_by_push &&
+      student.push_devices > 0 &&
+      `notifications (${student.push_devices} device${student.push_devices === 1 ? '' : 's'})`,
+  ]
     .filter(Boolean)
     .join(' + ')
 
@@ -344,6 +399,10 @@ function StudentCard({ student, onChange }: { student: Student; onChange: () => 
           <label className="cb-check">
             <input type="checkbox" name="by_telegram" defaultChecked={student.remind_by_telegram} /> Telegram
             reminders
+          </label>
+          <label className="cb-check">
+            <input type="checkbox" name="by_push" defaultChecked={student.remind_by_push} /> Notifications on the
+            student's devices ({student.push_devices})
           </label>
           <button className="cb-btn cb-btn-primary">Save</button>
         </form>

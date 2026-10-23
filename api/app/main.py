@@ -11,7 +11,7 @@ from app.config import get_settings
 from app.db import SessionLocal, engine
 from app.migrate import upgrade_db
 from app.notify import dispatch_due_reminders
-from app.routers import auth, boards, lessons, students
+from app.routers import auth, boards, lessons, push, students
 from app.seed import seed_demo
 from app.telegram_bot import poll_forever
 
@@ -62,7 +62,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    for module in (auth, students, lessons, boards):
+    for module in (auth, students, lessons, boards, push):
         app.include_router(module.router, prefix="/api")
 
     @app.get("/api/health", tags=["meta"])
