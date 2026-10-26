@@ -7,7 +7,7 @@
     set -e
     sha=$(git -C /repo rev-parse --short {{ chalkback_ref }})
     git -C /repo archive --format=tar.gz -o /tmp/chalkback-$sha.tar.gz {{ chalkback_ref }}
-    # The landing page's autopilot log, fresh from git (merges, tags and their release notes).
+    # The autopilot log for the landing page, fresh from git (merges, tags, release notes).
     cd /repo && python3 scripts/autopilot_log.py {{ chalkback_ref }} > /tmp/autopilot-$sha.json
     echo $sha
   register: release
