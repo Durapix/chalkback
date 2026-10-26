@@ -23,6 +23,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0  # full history and tags for the landing page's autopilot log
       # Secrets go through env vars, never interpolated into the script text.
       - name: Configure SSH and inventory
         env:

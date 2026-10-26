@@ -7,6 +7,8 @@ key="${SSH_KEY:-$HOME/.ssh/chalkback}"
 [ -f "$here/inventory.ini" ] || { echo "Create $here/inventory.ini from inventory.example.ini" >&2; exit 1; }
 [ -f "$key" ] && [ -f "$key.pub" ] || { echo "SSH key $key(.pub) not found (set SSH_KEY)" >&2; exit 1; }
 
+docker info >/dev/null 2>&1 || { echo "Docker is not running (start Docker Desktop and try again)" >&2; exit 1; }
+
 # Git Bash on Windows: hand Docker Windows paths and stop MSYS rewriting container paths.
 winpath() { if command -v cygpath >/dev/null; then cygpath -w "$1"; else echo "$1"; fi; }
 export MSYS_NO_PATHCONV=1

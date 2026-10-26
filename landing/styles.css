@@ -854,6 +854,44 @@ h3 {
   font-size: 14px;
 }
 
+.timeline .notes {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.timeline .notes summary {
+  cursor: pointer;
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.timeline .notes h5 {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.timeline .notes ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.timeline .notes li {
+  position: static;
+  margin: 3px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.timeline .notes li::before {
+  content: none;
+}
+
 .muted {
   color: var(--muted);
 }

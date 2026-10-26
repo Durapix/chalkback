@@ -287,3 +287,18 @@ def test_reminder_section_titles_follow_the_recap_language():
     assert "Отвори таблу" in notify.render_html(student, older)
     english = Lesson(id=2, title="T", summary={**summary, "language": "English"})
     assert "Key points:" in notify.render_text(student, english)
+
+
+def test_offline_mode_never_overwrites_an_ai_recap(client, teacher):
+    """The public demo runs without an AI key: its saved AI recaps must survive the button."""
+    lesson = client.get("/api/lessons", headers=teacher).json()[0]
+    with SessionLocal() as db:
+        from app.models import Lesson
+
+        row = db.get(Lesson, lesson["id"])
+        row.summary = {**(row.summary or {}), "headline": "AI recap", "model": "claude-opus-5-5"}
+        db.commit()
+    r = client.post(f"/api/lessons/{lesson['id']}/summarize", headers=teacher)
+    assert r.status_code == 409 and "kept" in r.json()["detail"]
+    shown = client.get(f"/api/lessons/{lesson['id']}", headers=teacher).json()
+    assert shown["summary"]["headline"] == "AI recap"

@@ -28,6 +28,17 @@ function countUp(el, to) {
   requestAnimationFrame(step)
 }
 
+// The release's changelog, grouped (Security, Fixed, Added, ...). The newest one starts open.
+function releaseNotes(release, open) {
+  const groups = Object.entries(release.groups || {})
+  if (!groups.length) return ''
+  const count = groups.reduce((n, [, items]) => n + items.length, 0)
+  const body = groups
+    .map(([name, items]) => `<h5>${esc(name)}</h5><ul>${items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`)
+    .join('')
+  return `<details class="notes"${open ? ' open' : ''}><summary>Changelog · ${count} changes</summary>${body}</details>`
+}
+
 async function loadAutopilot() {
   const list = document.getElementById('timeline')
   let data
@@ -52,11 +63,13 @@ async function loadAutopilot() {
     ...data.releases.map((r) => ({ kind: 'release', ...r })),
   ].sort((a, b) => b.date.localeCompare(a.date))
 
+  const latest = data.releases[0]?.name
   list.innerHTML = items
     .map((it) =>
       it.kind === 'release'
         ? `<li class="release"><div class="meta"><span class="pill rel">release</span>${day(it.date)}</div>
-             <h4>${esc(it.name)}</h4><p>Tagged and released by the agent.</p></li>`
+             <h4>${esc(it.name)}</h4><p>${esc(it.intro || 'Tagged and released by the agent.')}</p>
+             ${releaseNotes(it, it.name === latest)}</li>`
         : `<li><div class="meta"><span class="pill merged">merged</span><span class="pill">${esc(it.branch)}</span>
              ${it.commits} commits · ${it.review_fixes} self-review fix${it.review_fixes === 1 ? '' : 'es'} · ${day(it.date)} · ${esc(it.sha)}</div>
              <p>${esc(it.summary)}</p></li>`,

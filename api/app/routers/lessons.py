@@ -154,6 +154,11 @@ def request_summary(lesson_id: int, teacher: Teacher, db: DB, tasks: BackgroundT
     lesson = own_lesson(db, teacher, lesson_id)
     if not any(b.status == JobStatus.ready for b in lesson.boards) and not lesson.notes.strip():
         raise HTTPException(status.HTTP_409_CONFLICT, "Nothing to summarize yet")
+    if not get_settings().ai_enabled and (lesson.summary or {}).get("model"):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "AI recaps are turned off on this server, so the existing AI recap is kept",
+        )
     lesson.summary_status, lesson.summary_error = JobStatus.pending, None
     db.commit()
     tasks.add_task(summarize_lesson, lesson.id)
