@@ -8,6 +8,7 @@ import logging
 from app.ai.claude import AIError
 from app.ai.reconstruct import reconstruct
 from app.ai.summarize import summarize
+from app.config import get_settings
 from app.db import SessionLocal
 from app.models import Board, JobStatus, Lesson
 
@@ -52,7 +53,10 @@ async def summarize_lesson(lesson_id: int) -> None:
             lesson.summary_status = JobStatus.failed
             lesson.summary_error = "Unexpected error while summarizing"
         else:
-            # The language it was written in, for the section titles around it.
+            # The language it was written in (for the section titles around it) and, for AI
+            # recaps, the model, so offline mode never overwrites them.
             lesson.summary = {**summary.model_dump(), "language": student.language}
+            if get_settings().ai_enabled:
+                lesson.summary["model"] = get_settings().claude_model
             lesson.summary_status = JobStatus.ready
         db.commit()

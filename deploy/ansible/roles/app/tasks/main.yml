@@ -7,6 +7,8 @@
     set -e
     sha=$(git -C /repo rev-parse --short {{ chalkback_ref }})
     git -C /repo archive --format=tar.gz -o /tmp/chalkback-$sha.tar.gz {{ chalkback_ref }}
+    # The landing page's autopilot log, fresh from git (merges, tags and their release notes).
+    cd /repo && python3 scripts/autopilot_log.py {{ chalkback_ref }} > /tmp/autopilot-$sha.json
     echo $sha
   register: release
   changed_when: false
@@ -22,6 +24,12 @@
     src: "/tmp/chalkback-{{ release.stdout }}.tar.gz"
     dest: "{{ app_dir }}/releases/{{ release.stdout }}"
     creates: "{{ app_dir }}/releases/{{ release.stdout }}/deploy/docker-compose.yml"
+
+- name: Current autopilot log on the landing page
+  ansible.builtin.copy:
+    src: "/tmp/autopilot-{{ release.stdout }}.json"
+    dest: "{{ app_dir }}/releases/{{ release.stdout }}/landing/autopilot.json"
+    mode: "0644"
 
 - name: Secrets directory (root only)
   ansible.builtin.file:

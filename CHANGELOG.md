@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The landing page's autopilot log shows each release's changelog, and is generated at deploy
+  time, so it is never a release behind.
+- Without an AI key (the public demo), Regenerate recap no longer replaces a saved AI recap with
+  the offline one.
+
 ## [0.3.0] - 2026-10-23
 
 Reminders reach students where they are: e-mail from chalkback.xyz, Telegram with a one-tap
