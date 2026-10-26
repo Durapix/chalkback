@@ -1,0 +1,17 @@
+# GitHub Pages (Jekyll): only index.md and the logo are published; the code stays in the repo.
+title: Chalkback
+description: Tutoring whiteboards in, editable tldraw boards and lesson recaps out. Built end to end by an AI agent on autopilot.
+theme: jekyll-theme-cayman
+exclude:
+  - api
+  - web
+  - landing
+  - docs
+  - deploy
+  - scripts
+  - mkdocs.yml
+  - README.md
+  - CHANGELOG.md
+  - board_examples
+  - linkedin
+  - "*.txt"
