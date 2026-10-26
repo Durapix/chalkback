@@ -51,3 +51,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: docker build api
       - run: docker build -f deploy/web.Dockerfile .
+
+  ansible:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - name: Playbook syntax
+        working-directory: deploy/ansible
+        run: uvx --from "ansible>=11,<13" ansible-playbook --syntax-check -i inventory.example.ini site.yml
